@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "parser.h"
 #include "read_config.h"
+#include "tcp_helpers.h"
 
 int main(int argc, char **argv) {
 
@@ -68,24 +69,37 @@ int main(int argc, char **argv) {
 
 			PARSE_OBJ pcmd = parse(cmd_buf);
 			int cmd_it = 0;
+			char input_buf[__MAX_OUT_SIZE__ + 1] = {0};
 			while(!PARSE_EMPTY(pcmd, cmd_it)) {
 				char *cl = PARSE_GET_KEY(pcmd, cmd_it);
 				char *in_cmd = PARSE_GET_VAL(pcmd, cmd_it);
-				if(cl == '-') {
-						
-				}
-				else if(cl[1] == '*') {
+				if(cl[1] == '*') {
 				
 				}
 				else {
-					int cl_no = atoi(cl + 1);	
-					int `
+					int con_fd;				
+					if(cl[0] != '-') {
+						int cl_no = atoi(cl + 1);	
+						con_fd = 	clnt_side_setup(config_ips[cl_no-1], __CLIENT_PORT__);
+					}
+					else {
+						con_fd = clnt_side_setup(inet_ntoa(clnt_addr.sin_addr), __CLIENT_PORT__);	
+					}
+					char response[__MAX_CMD_SIZE__ + 1 + __MAX_OUT_SIZE__ + 1] = {0};
+					strcpy(response, in_cmd);
+					strcpy(response+strlen(in_cmd)+1, input_buf);
+					int response_size = strlen(in_cmd)+1+strlen(input_buf)+1;
+					int nbytes = write(con_fd, response, response_size);
+					if(nbytes != response_size) {
+						printf("Error in writing. Exiting...\n");	
+					}
+					read(con_fd, input_buf, __MAX_OUT_SIZE__+1);
+					close(con_fd);
 				}
-
-
-
 				++cmd_it;
 			}
+
+			write(clnt_sock, input_buf, sizeof(input_buf));
 
 			close(clnt_sock);
 		}

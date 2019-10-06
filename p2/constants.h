@@ -5,6 +5,7 @@
 #define __MAX_CLIENTS__ 		100
 #define __MAX_PIPES__ 			100
 #define __MAX_CMD_SIZE__ 		1024
+#define __MAX_OUT_SIZE__ 		1024
 #define __CLIENT_PORT__ 		8081
 #define __SERVER_PORT__ 		8080
 #define __CONFIG_FILE__ 		"CONFIG"
