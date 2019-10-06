@@ -105,7 +105,8 @@ PARSE_OBJ parse_dots(char **strs) {
 }
 
 int main() {
-	PARSE_OBJ pcmd = parse("n1.cat file|n3.sort|uniq|n3.fuck off");
+//	PARSE_OBJ pcmd = parse("n1.cat file|n3.sort|uniq|n3.fuck off");
+	PARSE_OBJ pcmd = parse("n*.cat file");
 	int i = 0;
 	while(!PARSE_EMPTY(pcmd, i)) {
 		printf("%d. %s: %s\n", i, PARSE_GET_KEY(pcmd, i), PARSE_GET_VAL(pcmd, i));
