@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 				++cmd_it;
 			}
 
-			printf("Received output: %s\n", input_buf);
+			printf("Received output: %s, %d\n", input_buf, input_buf_size);
 			write(clnt_sock, input_buf, input_buf_size);
 			printf("reached here\n");
 			}

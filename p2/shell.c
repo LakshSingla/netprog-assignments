@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
+
 #include "constants.h"
 #include "tcp_helpers.h"
 
@@ -26,14 +27,15 @@ void run_shell (int serv_port) {
 
 		if (strcmp(cmd, __EXIT_CMD__) == 0) break;
 
-		printf("sending to server: %s\n", cmd);
+//		printf("sending to server: %s\n", cmd);
 
 		// send input command to the server
 		write(con_fd, cmd, numread_shell - 1);
-
 		// read output of command from the server
 		char buf[__MAX_OUT_SIZE__ + 1];
+		printf("xx\n");
 		size_t numread_server = read(con_fd, buf, __MAX_OUT_SIZE__);
+		printf("xxx\n");
 
 		if (numread_server < 0) {
 			printf("Error reading from server\n");
@@ -42,7 +44,7 @@ void run_shell (int serv_port) {
 
 		buf[numread_server] = '\0';
 
-		printf("result:\n %s\n", buf);
+		printf("result: %s\n", buf);
 	}
 	close(con_fd);
 }
@@ -53,22 +55,24 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 	cmd = cmd_inp;
 	inp = cmd_inp;
 
-	int i = 0;
+/*	int i = 0;
 	while (cmd_inp[i] != 0) {
 		inp++;
 		i++;
 	}
-	inp++;
+	inp++;*/
+	inp = cmd_inp + strlen(cmd_inp) + 1;
+	int i = strlen(cmd_inp);
 
 	struct cmd_out output;
 
 	if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
 		// cd command
-		printf("heree\n");
 		char *path = cmd + 3;
 
+//		printf("cmd -> %s\n", path);
 		if (chdir(path) < 0) {
-			printf("Error changing directory\n");
+			printf("Error changing directory: %d\n", errno);
 		}
 	}
 	else {
@@ -77,9 +81,12 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 
 		write(p[1], inp, cmd_inp_size - i - 1);
 
+//		printf("inp: %s\ncmd: %s\n", inp, cmd);
+
 		close(p[1]);
-		close(0);
-		dup(p[0]);
+//		close(0);
+//		dup(p[0]);
+		dup2(p[0], 0);
 
 		FILE *fd = popen(cmd, "r");
 
@@ -91,8 +98,9 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 			exit(0);
 		}
 		x[output.nbytes] = 0;
-		printf("STDIN: %s\n", x);
+//		printf("STDIN: %s\n", x);
 		output.out = x;
+		close(p[0]);
 	}
 	return output;
 }
@@ -116,7 +124,7 @@ int main () {
 
         	char buf[__MAX_CMD_SIZE__ + 1];
         	size_t numread = read(clnt_sock, buf, __MAX_CMD_SIZE__);
-			printf("Received cmd: %s\n", buf);
+//			printf("Received cmd: %s\n", buf);
 
         	if (numread < 0) {
             	printf("Error reading from server\n");
