@@ -57,9 +57,40 @@ int main(int argc, char **argv) {
 			while(!PARSE_EMPTY(pcmd, cmd_it)) {
 				char *cl = PARSE_GET_KEY(pcmd, cmd_it);
 				char *in_cmd = PARSE_GET_VAL(pcmd, cmd_it);
+
 				if(cl[1] == '*') {
-				
+					printf("Handling wild\n");
+					char **cur_ip = config_ips;
+					char concat_resp[__MAX_OUT_SIZE__+1];
+					int concat_offset = 0;
+					while(*cur_ip) {
+						printf("XXX\n");
+						int con_fd = clnt_side_setup(*cur_ip, __CLIENT_PORT__);				
+						char response[__MAX_CMD_SIZE__ + 1 + __MAX_OUT_SIZE__ + 1] = {0};	
+						strcpy(response, in_cmd);
+						strcpy(response+strlen(in_cmd)+1, input_buf);
+						int response_size = strlen(in_cmd)+1+strlen(input_buf)+1;
+						int nbytes = write(con_fd, response, response_size);
+						if(nbytes != response_size) {
+							printf("Error in writing. Exiting...\n");	
+						}
+						char tmp_buf[__MAX_OUT_SIZE__ + 1];
+						int tmp_buf_size;
+						tmp_buf_size = read(con_fd, tmp_buf, __MAX_OUT_SIZE__+1);
+						tmp_buf[tmp_buf_size] = 0;
+						printf("%s\n", tmp_buf);
+						strcpy(concat_resp+concat_offset, tmp_buf);
+						concat_offset += tmp_buf_size;
+						concat_resp[concat_offset] = '\n';
+						concat_offset += 1;
+						close(con_fd);
+						++cur_ip;	
+					}
+					concat_resp[concat_offset] = 0;
+					input_buf_size = concat_offset+1;
+					strcpy(input_buf, concat_resp);
 				}
+
 				else {
 					int con_fd;				
 					if(cl[0] != '-') {
@@ -85,7 +116,8 @@ int main(int argc, char **argv) {
 				}
 				++cmd_it;
 			}
-
+			input_buf[input_buf_size] = 0;
+			++input_buf_size;
 			printf("Received output: %s\n", input_buf);
 			write(clnt_sock, input_buf, input_buf_size);
 			printf("reached here\n");
