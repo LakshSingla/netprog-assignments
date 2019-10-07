@@ -77,6 +77,7 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 
 		write(p[1], inp, cmd_inp_size - i - 1);
 
+		close(p[1]);
 		close(0);
 		dup(p[0]);
 
@@ -85,11 +86,12 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 		char x[__MAX_OUT_SIZE__];
 
 		output.nbytes = read(fileno(fd), x, __MAX_OUT_SIZE__);
-		if (output.nbytes <= 0) {
+		if (output.nbytes < 0) {
 			printf("Error reading output from pipe...\n");
 			exit(0);
 		}
 		x[output.nbytes] = 0;
+		printf("STDIN: %s\n", x);
 		output.out = x;
 	}
 	return output;
