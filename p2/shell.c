@@ -64,7 +64,7 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 
 	if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
 		// cd command
-
+		printf("heree\n");
 		char *path = cmd + 3;
 
 		if (chdir(path) < 0) {
@@ -114,6 +114,7 @@ int main () {
 
         	char buf[__MAX_CMD_SIZE__ + 1];
         	size_t numread = read(clnt_sock, buf, __MAX_CMD_SIZE__);
+			printf("Received cmd: %s\n", buf);
 
         	if (numread < 0) {
             	printf("Error reading from server\n");

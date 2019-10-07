@@ -18,6 +18,11 @@ int serv_side_setup (int serv_port) {
 		exit(0);
 	}
 
+	if (setsockopt(serv_sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+		printf("Error sock opt\n");
+		exit(0);
+	}
+
 	bzero(&serv_addr, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;

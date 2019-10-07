@@ -43,10 +43,10 @@ int main(int argc, char **argv) {
 		else if(ch_handler == 0) {
 			close(serv_sock);
 
-			while (1) {
+			while (true) {
 			char cmd_buf[__MAX_CMD_SIZE__];
 			int n = read(clnt_sock, cmd_buf, __MAX_CMD_SIZE__);
-			if(n < 0) exit(-1);
+			if(n < 0) { break; exit(-1); }
 			cmd_buf[n] = '\0';
 			printf("Received command: %s\n", cmd_buf);
 
@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
 						printf("Error in writing. Exiting...\n");	
 					}
 					input_buf_size = read(con_fd, input_buf, __MAX_OUT_SIZE__+1);
+					printf("Pipe out: %s\n", input_buf);
 					close(con_fd);
 				}
 				++cmd_it;
