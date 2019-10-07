@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include<errno.h>
 
 #include "constants.h"
 #include "parser.h"
@@ -16,39 +17,17 @@
 int main(int argc, char **argv) {
 
 	// Setup server
-	int serv_sock, clnt_sock;
-	struct sockaddr_in serv_addr, clnt_addr;
+	int clnt_sock, serv_sock = serv_side_setup(__SERVER_PORT__);
+	struct sockaddr_in clnt_addr;
 
-	if ((serv_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		printf("Error creating socket\n");
-		exit(0);
-	}
-
-	memset(&serv_addr, 0, sizeof(serv_addr));
-
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_addr.sin_port = htons(__SERVER_PORT__);
-
-	if (bind(serv_sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)	{
-		printf("Error binding socket\n");
-		exit(0);
-	}
-
-	if (listen(serv_sock, __MAX_PENDING__) < 0) {
-		printf("Error listening socket\n");
-		exit(0);
-	}
 	// Server in listening mode
-	
 	char **config_ips = read_config(__CONFIG_FILE__);
-	
 
   while(true) {
 		int clnt_len = sizeof(clnt_addr);
 
 		if ((clnt_sock = accept(serv_sock, (struct sockaddr *) &clnt_addr, &clnt_len)) < 0) {
-			printf("Error listening socket\n");
+			printf("Error listening socket: %d\n", errno);
 			exit(0);
 		}
 
@@ -63,13 +42,18 @@ int main(int argc, char **argv) {
 
 		else if(ch_handler == 0) {
 			close(serv_sock);
+
+			while (1) {
 			char cmd_buf[__MAX_CMD_SIZE__];
 			int n = read(clnt_sock, cmd_buf, __MAX_CMD_SIZE__);
 			if(n < 0) exit(-1);
+			cmd_buf[n] = '\0';
+			printf("Received command: %s\n", cmd_buf);
 
 			PARSE_OBJ pcmd = parse(cmd_buf);
 			int cmd_it = 0;
 			char input_buf[__MAX_OUT_SIZE__ + 1] = {0};
+			int input_buf_size = 0;
 			while(!PARSE_EMPTY(pcmd, cmd_it)) {
 				char *cl = PARSE_GET_KEY(pcmd, cmd_it);
 				char *in_cmd = PARSE_GET_VAL(pcmd, cmd_it);
@@ -89,18 +73,22 @@ int main(int argc, char **argv) {
 					strcpy(response, in_cmd);
 					strcpy(response+strlen(in_cmd)+1, input_buf);
 					int response_size = strlen(in_cmd)+1+strlen(input_buf)+1;
+
+					printf("Sending cmd: %s\n", response);
 					int nbytes = write(con_fd, response, response_size);
 					if(nbytes != response_size) {
 						printf("Error in writing. Exiting...\n");	
 					}
-					read(con_fd, input_buf, __MAX_OUT_SIZE__+1);
+					input_buf_size = read(con_fd, input_buf, __MAX_OUT_SIZE__+1);
 					close(con_fd);
 				}
 				++cmd_it;
 			}
 
-			write(clnt_sock, input_buf, sizeof(input_buf));
-
+			printf("Received output: %s\n", input_buf);
+			write(clnt_sock, input_buf, input_buf_size);
+			printf("reached here\n");
+			}
 			close(clnt_sock);
 		}
 
