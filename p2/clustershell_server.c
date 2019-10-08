@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
 					src[new_len] = 0;
 					++new_len;
 					write(clnt_sock, src, new_len);
+					free(src);
 					continue;
 				}
 
