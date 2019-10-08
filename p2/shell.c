@@ -33,9 +33,7 @@ void run_shell (int serv_port) {
 		write(con_fd, cmd, numread_shell - 1);
 		// read output of command from the server
 		char buf[__MAX_OUT_SIZE__ + 1];
-		printf("xx\n");
 		size_t numread_server = read(con_fd, buf, __MAX_OUT_SIZE__);
-		printf("xxx\n");
 
 		if (numread_server < 0) {
 			printf("Error reading from server\n");
@@ -90,16 +88,16 @@ struct cmd_out exec_cmd (char *cmd_inp, int cmd_inp_size) {
 
 		FILE *fd = popen(cmd, "r");
 
-		char x[__MAX_OUT_SIZE__];
+		char tmp_out[__MAX_OUT_SIZE__];
 
-		output.nbytes = read(fileno(fd), x, __MAX_OUT_SIZE__);
+		output.nbytes = read(fileno(fd), tmp_out, __MAX_OUT_SIZE__);
 		if (output.nbytes < 0) {
 			printf("Error reading output from pipe...\n");
 			exit(0);
 		}
-		x[output.nbytes] = 0;
-//		printf("STDIN: %s\n", x);
-		output.out = x;
+		tmp_out[output.nbytes] = 0;
+//		printf("STDIN: %s\n", tmp_out);
+		output.out = (strcmp(cmd, "sort") == 0) ? tmp_out + 2 : tmp_out;
 		close(p[0]);
 	}
 	return output;
