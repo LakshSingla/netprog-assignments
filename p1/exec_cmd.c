@@ -103,6 +103,8 @@ void exec_cmd (char *cmd) {
 
 //	PIPE_INFO *pipe_pipe = CREATE_PIPE_TYPE(PIPE, p[0], p[1]);
 	PIPE_INFO *pipe_pipe;
+	PIPE_INFO *shm_pipe;
+	PIPE_INFO *msgq_pipe;
 
 	// creating output pipe
 	int p_out[2];
@@ -135,6 +137,13 @@ void exec_cmd (char *cmd) {
 				i++;
 
 				if (strcmp(single_opt, "|") == 0) {
+					int p[2];
+					pipe(p);
+
+					pipe_pipe = CREATE_PIPE_TYPE(PIPE, p[0], p[1]);
+					write_end = pipe_pipe;
+				}
+				else if (strcmp(single_opt, "#") == 0) {
 					int p[2];
 					pipe(p);
 
