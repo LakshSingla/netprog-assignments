@@ -14,18 +14,16 @@ typedef enum pipe_medium PIPE_MEDIUM;
 
 struct pipe_info {
 	PIPE_MEDIUM type;
-	int read_id[2];
-	int write_id[2];
+	int read_id;
+	int write_id;
 };
 typedef struct pipe_info PIPE_INFO;
 
-PIPE_INFO* CREATE_PIPE_TYPE (PIPE_MEDIUM type, int read_id[], int write_id[]) {
+PIPE_INFO* CREATE_PIPE_TYPE (PIPE_MEDIUM type, int read_id, int write_id) {
 	PIPE_INFO *pi = (PIPE_INFO *) malloc(sizeof(PIPE_INFO));
 	pi->type = type;
-	pi->read_id[0] = read_id[0];
-	pi->read_id[1] = read_id[1];
-	pi->write_id[0] = write_id[0];
-	pi->write_id[1] = write_id[1];
+	pi->read_id = read_id;
+	pi->write_id = write_id;
 
 	return pi;
 }
@@ -74,18 +72,21 @@ void exec_single_cmd (char *cmd) {
 }
 
 
-void READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to, int psync[]) {
+void READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 	int inp_size = 0, out_size = 0;
 	char inp[__MAX_OUT_SIZE__], out[__MAX_OUT_SIZE__];
 
+//	if (from != NULL) fprintf(stderr, "fds1: %d %d\n", from->read_id, from->write_id);
+//	fprintf(stderr, "fds2: %d %d\n", to->read_id, to->write_id);
+
 	if (from != NULL) {
+		close(from->write_id);
 		close(0);
-		dup(from->read_id[0]);
+		dup(from->read_id);
 	}
-	printf("test: %d\n", to->write_id[1]);
 
 	close(1);
-	dup(to->write_id[1]);
+	dup(to->write_id);
 
 	exec_single_cmd(cmd);
 }
@@ -96,20 +97,18 @@ void READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to, int psync[]) {
 void exec_cmd (char *cmd) {
 	PARSED_CMD *parsed = parse_cmd(cmd);
 
-	//sync pipe
-	int psync[2];
-	pipe(psync);
-
 	// creating pipe
-	int p1[2];
-	pipe(p1);
-	int p2[2];
-	pipe(p2);
+//	int p[2];
+//	pipe(p);
 
-	int p_reads[2] = {p1[0], p2[0]};
-	int p_writes[2] = {p1[1], p2[1]};
+//	PIPE_INFO *pipe_pipe = CREATE_PIPE_TYPE(PIPE, p[0], p[1]);
+	PIPE_INFO *pipe_pipe;
 
-	PIPE_INFO *pipe_pipe = CREATE_PIPE_TYPE(PIPE, p_reads, p_writes);
+	// creating output pipe
+	int p_out[2];
+	pipe(p_out);
+
+	PIPE_INFO *pipe_pipe_out = CREATE_PIPE_TYPE(PIPE, p_out[0], p_out[1]);
 
 	PIPE_INFO *read_end = NULL, *write_end = NULL;
 	int prev = 0;
@@ -119,7 +118,6 @@ void exec_cmd (char *cmd) {
 	while (dim < parsed->dim) {
 		int i = 0;
 		while (parsed->cmd_opt_list[dim][i] != NULL) {
-//			printf("a: %s\n", parsed->cmd_opt_list[dim][i]);
 
 			char *single_cmd = parsed->cmd_opt_list[dim][i];
 			i++;
@@ -127,49 +125,51 @@ void exec_cmd (char *cmd) {
 			if (i == 1) {
 				read_end = NULL;
 			}
-			else read_end = write_end;
+			else {
+				read_end = write_end;
+				close(read_end->write_id);
+			}
 
 			if (parsed->cmd_opt_list[dim][i] != NULL) {
 				char *single_opt = parsed->cmd_opt_list[dim][i];
 				i++;
 
 				if (strcmp(single_opt, "|") == 0) {
+					int p[2];
+					pipe(p);
+
+					pipe_pipe = CREATE_PIPE_TYPE(PIPE, p[0], p[1]);
 					write_end = pipe_pipe;
 				}
 			}
 			else {
-				write_end = pipe_pipe; // the final output written in pipe
+				write_end = pipe_pipe_out; // the final output written in pipe
 			}
 
 			pid_t pid = fork();
 			if (pid == 0) {
-				printf("asdf\n");
-				READ_EXEC_WRITE(read_end, single_cmd, write_end, psync);
+				READ_EXEC_WRITE(read_end, single_cmd, write_end);
 			}
-
-			printf("test: %d\n", write_end->write_id[1]);
-			char out[__MAX_OUT_SIZE__];
-			int numread = read(write_end->read_id[1], out, __MAX_OUT_SIZE__);
-			printf("here: %d\n", numread);
-			out[numread] = 0;
-
-			write(write_end->write_id[0], out, numread+1);
-/*			char out2[__MAX_OUT_SIZE__];
-			int numread2 = read(write_end->read_id[0], out2, __MAX_OUT_SIZE__);
-			printf("here2: %d\n", numread);*/
+			else {
+				int status;
+				waitpid(pid, &status, 0);
+				while (!WIFEXITED(status) && !WIFSIGNALED(status) && !WIFSTOPPED(status)) {
+					waitpid(pid, &status, 0);
+				}
+			}
 		}
 
 		dim++;
 	}
 
 	char out[__MAX_OUT_SIZE__];
-	int numread = read(write_end->read_id[0], out, __MAX_OUT_SIZE__);
+	int numread = read(write_end->read_id, out, __MAX_OUT_SIZE__);
 	out[numread] = 0;
-	printf("out: %s\n", out);
+	printf("out:\n%s\n", out);
 
 	free(pipe_pipe);
 }
 
 int main () {
-	exec_cmd("ls|wc");
+	exec_cmd("cat README.md|wc");
 }
