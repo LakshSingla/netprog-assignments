@@ -17,7 +17,6 @@ int main() {
 		ssize_t cmd_size_act = getline(&cmd_buf, &cmd_size, stdin);
 		if(cmd_size_act == -1 || cmd_size_act == 0) { /* error */ }
 		cmd_buf[cmd_size_act-1] = 0;
-		//printf("%ld, %s", cmd_size_act, cmd_buf);
 		
 
 		char *canonical_path = get_canonical_path(cmd_buf);
