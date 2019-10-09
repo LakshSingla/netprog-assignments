@@ -31,7 +31,7 @@ PIPE_INFO* CREATE_PIPE_TYPE (PIPE_MEDIUM type, int read_id, int write_id) {
 /*
 	Executed a single command in which |,#,S,> have been removed
 */
-void exec_single_cmd (char *cmd) {
+int exec_single_cmd (char *cmd) {
 	char *tmp_cmd = strdup(cmd);
 	char *tmp_cmd2 = strdup(cmd);
 	int token_cnt = 0;
@@ -56,23 +56,24 @@ void exec_single_cmd (char *cmd) {
 		}
 		cmd_args[i] = NULL;
 
-//		for (int j = 0; j < token_cnt; j++) printf("aa: %s\n", cmd_args[j]);
-
 		char *canonical_path = get_canonical_path(cmd_args[0]);
+		if (canonical_path == NULL) {
+			fprintf(stderr, "%s: Command not found\n", cmd_args[0]);
+			return 0;
+		}
+//		fprintf(stderr, "here: %s\n", canonical_path);
 
 		if (execv(canonical_path, cmd_args) == -1) {
-			printf("Error executing command: %d\n", errno);
+			fprintf(stderr, "Error executing command: %d\n", errno);
 		}
 
 		FREE_CANONICAL_PATH(canonical_path);
 	}
 
-	free(tmp_cmd);
-	free(tmp_cmd2);
 }
 
 
-void READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
+int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 	int inp_size = 0, out_size = 0;
 	char inp[__MAX_OUT_SIZE__], out[__MAX_OUT_SIZE__];
 
@@ -85,16 +86,18 @@ void READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 		dup(from->read_id);
 	}
 
-	close(1);
-	dup(to->write_id);
+	if (to != NULL) {
+		close(1);
+		dup(to->write_id);
+	}
 
-	exec_single_cmd(cmd);
+	return exec_single_cmd(cmd);
 }
 
 /*
 	Execute a complete command
 */
-void exec_cmd (char *cmd) {
+int exec_cmd (char *cmd) {
 	PARSED_CMD *parsed = parse_cmd(cmd);
 
 	// creating pipe
@@ -152,33 +155,69 @@ void exec_cmd (char *cmd) {
 				}
 			}
 			else {
-				write_end = pipe_pipe_out; // the final output written in pipe
+				write_end = NULL;
 			}
 
-			pid_t pid = fork();
-			if (pid == 0) {
-				READ_EXEC_WRITE(read_end, single_cmd, write_end);
+			int p_sync_fg[2];
+	        pipe(p_sync_fg);
+
+			pid_t child_executer = fork();
+
+        	if(child_executer < 0) {
+            	printf("Error spawning child. Exiting...\n");
+				exit(0);
+        	}
+			else if (child_executer == 0) {
+				close(p_sync_fg[1]);
+
+            	char buf_sync_fg[3];
+            	int n = read(p_sync_fg[0], buf_sync_fg, 3);
+
+            	setpgid(0, child_executer);
+
+				if (READ_EXEC_WRITE(read_end, single_cmd, write_end) == 0) {
+					exit(1);
+				};
 			}
 			else {
-				int status;
-				waitpid(pid, &status, 0);
-				while (!WIFEXITED(status) && !WIFSIGNALED(status) && !WIFSTOPPED(status)) {
-					waitpid(pid, &status, 0);
-				}
+				close(p_sync_fg[0]);
+
+            	if(setpgid(child_executer, child_executer) == -1) {
+                	printf("Unable to create a new process group. Exiting command...\n");
+                	exit(0);
+            	}
+
+            	signal(SIGTTOU, SIG_IGN);
+
+            	if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
+                	printf("Unable to set process group as foreground. Exiting command...\n");
+                	exit(0);
+            	}
+
+            	write(p_sync_fg[1], "TTT", 3);
+
+	        	int child_executer_status;
+            	do {
+                	waitpid(child_executer, &child_executer_status, WUNTRACED);
+            	} while(
+                    	!WIFSIGNALED(child_executer_status)			&&
+                    	!WIFEXITED(child_executer_status)			&&
+                    	!WIFSTOPPED(child_executer_status)
+               	);
+
+				tcsetpgrp(0, getpid());
+				signal(SIGTTOU, SIG_DFL);
+
 			}
 		}
 
 		dim++;
 	}
 
-	char out[__MAX_OUT_SIZE__];
+/*	char out[__MAX_OUT_SIZE__];
 	int numread = read(write_end->read_id, out, __MAX_OUT_SIZE__);
 	out[numread] = 0;
-	printf("out:\n%s\n", out);
+	printf("out:\n%s\n", out);*/
 
-	free(pipe_pipe);
-}
-
-int main () {
-	exec_cmd("cat README.md|wc");
+	//free(pipe_pipe);
 }
