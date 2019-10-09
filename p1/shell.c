@@ -40,8 +40,8 @@ int main() {
 
 		else if(child_executer > 0) {
 			close(p_sync_fg[0]);
-			printf("waiting for child\n");
-			printf("Parent pgid: %d\n", getpgid(0));
+			//printf("waiting for child\n");
+			//printf("Parent pgid: %d\n", getpgid(0));
 
 			if(setpgid(child_executer, child_executer) == -1) {
 				printf("Unable to create a new process group. Exiting command...\n");
@@ -49,27 +49,40 @@ int main() {
 			}
 
 			printf("Current terminal controlling process: %d\n", tcgetpgrp(STDIN_FILENO));
+			signal(SIGTTOU, SIG_IGN);
 			if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
 				printf("Unable to set process group as foreground. Exiting command...\n");
 				perror("se: ");
 				exit(0);
 			}
-			write(p_sync_fg[1], "T", 1);
-			printf("askldfjlsd\n");
-			waitpid(child_executer, &child_executer_status, WUNTRACED);	
+			//write(p_sync_fg[1], "TTT", 3);
+			do{
+				waitpid(child_executer, &child_executer_status, WUNTRACED);
+			}while(
+					!WIFSIGNALED(child_executer_status) 		&&
+					!WIFEXITED(child_executer_status)				&&
+					!WIFSTOPPED(child_executer_status) 		
+				);
 			printf("here\n");
 			//setpgid(0, child_executer);
 			signal(SIGTTOU, SIG_IGN);
 			tcsetpgrp(STDIN_FILENO, getpid());
 			signal(SIGTTOU, SIG_DFL);
 			printf("waited for child\n");
-			close(p_sync_fg[1]);
+			//close(p_sync_fg[1]);
 		}
 
 		else {
 			close(p_sync_fg[1]);
 			char buf_sync_fg[3];
-			read(p_sync_fg[0], buf_sync_fg, 1);
+			int n = read(p_sync_fg[0], buf_sync_fg, 3);
+			printf("prev buff");
+			write(2, buf_sync_fg, 3);
+			printf("\nnbytes: %d\n", n);
+			if(n < 0) {
+				perror("read: ");	
+			}
+			//sleep(1);
 			printf("here1\n");
 			printf("child pgid1: %d\n", getpgid(0));
 			int stdin_pgid = tcgetpgrp(STDIN_FILENO);
