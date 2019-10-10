@@ -13,7 +13,7 @@ struct command {
 	int ref_id;
 	char *cmd;
 	pid_t pgid;
-	enum TERMINAL_CONTROL tcm; // 0 -> fg, 1 -> bg
+	enum TERMINAL_CONTROL tcm; 
 	enum COMMAND_RUN_MODE crm;
 };
 

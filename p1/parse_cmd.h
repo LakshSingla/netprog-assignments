@@ -1,5 +1,5 @@
-#ifndef _PARSE_CMD_H
-#define _PARSE_CMD_H
+#ifndef _PARSE_CMD_H_
+#define _PARSE_CMD_H_
 
 #include<stdbool.h>
 struct parsed_cmd {

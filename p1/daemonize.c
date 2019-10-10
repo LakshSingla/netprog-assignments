@@ -41,9 +41,6 @@ void make_daemon(char *cmd) {
 
 	if(max_possible_fd == -1) max_possible_fd = __MAX_FD_LIMIT__;
 
-//	int fd = open("daemon_log", O_WRONLY, 0664);
-//	write(fd, cmd, 10);
-
 	for(int i = 0; i < max_possible_fd; ++i) close(i);
 
 	int fd0 = open("/dev/null", O_RDWR);

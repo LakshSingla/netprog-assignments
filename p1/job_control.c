@@ -37,19 +37,15 @@ void fg(int ref_id) {
 	
 	set_cmd(ref_id, TC_FG, CRM_RUN);
 	int child_executer_status;
-	printf("here1\n");
-//	signal(SIGTTOU, SIG_IGN);
 	if(kill(current_commands[ref_id]->pgid, SIGCONT) < 0) {
 		printf("Unable to restart the process\n");	
 		exit(-1);
 	}
-/*	if(tcsetpgrp(0, current_commands[ref_id]->pgid) == -1) {
+	if(tcsetpgrp(0, current_commands[ref_id]->pgid) == -1) {
 			printf("Unable to set process group as foreground. Exiting command...\n");
 			exit(0);
 	}
-	printf("here2\n");
 	int _pgid = current_commands[ref_id]->pgid;
-	printf("herex: %d\n", _pgid);
 	do {
 		waitpid(_pgid, &child_executer_status, WUNTRACED);
 	} while (
@@ -61,12 +57,11 @@ void fg(int ref_id) {
 		printf("stopped again\n");
 		set_cmd_by_pgid(_pgid, TC_BG, CRM_STP);
 	}
-			 	// Foreground process gets terminated
+	// Foreground process gets terminated
 	else if(WIFEXITED(child_executer_status) || WIFSIGNALED(child_executer_status)) {
 		if(WIFSIGNALED(child_executer_status)) {
-			printf("signl again - %d\n", WTERMSIG(child_executer_status));
+			printf("Terminated again\n");
 		}
-		printf("signl/exit again\n");
 		remove_from_group_by_pgid(_pgid);
 	 }
 	signal(SIGTTOU, SIG_IGN);
@@ -75,7 +70,6 @@ void fg(int ref_id) {
 		exit(-1);
 	}
 	signal(SIGTTOU, SIG_DFL);
-	printf("completeo\n");*/
 }
 
 void print_details() {
