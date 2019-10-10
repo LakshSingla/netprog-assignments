@@ -1,6 +1,11 @@
 #ifndef _PROC_MANAGEMENT_H_
 #define _PROC_MANAGEMENT_H_
 
+#include <stdlib.h>
+#include <stdbool.h>
+
+#include "constants.h"
+
 enum TERMINAL_CONTROL {TC_FG, TC_BG};
 enum COMMAND_RUN_MODE {CRM_RUN, CRM_STP};
 
@@ -9,11 +14,18 @@ struct command {
 	char *cmd;
 	pid_t pgid;
 	enum TERMINAL_CONTROL tcm; // 0 -> fg, 1 -> bg
-	enum COMMAND_RUN_MODE crm; //0 -> running, 1 -> stopped
+	enum COMMAND_RUN_MODE crm;
 };
 
+extern struct command *current_commands[__MAX_SIMULT_CMDS__];
 extern int no_procs;
-extern struct command **current_commands;
+
+bool add_to_group(struct command *);
+int get_refid_from_pgid(pid_t );
+bool remove_from_group(int );
+bool set_cmd(int , enum TERMINAL_CONTROL , enum COMMAND_RUN_MODE );
+bool set_cmd_by_pgid(pid_t , enum TERMINAL_CONTROL , enum COMMAND_RUN_MODE );
+bool remove_from_group_by_pgid(pid_t );
 
 
 #endif

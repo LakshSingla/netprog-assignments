@@ -12,6 +12,7 @@
 #define __CMD_DAEMONIZE__			"daemonize"
 #define __CMD_FG__						"fg"
 #define __CMD_BG__						"bg"
+#define __CMD_JOBS__					"jobs"
 
 #define __EMSG_UNHANDLED__		"Unhandled exception encountered. Exiting...\n"
 
