@@ -183,20 +183,19 @@ int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 	Execute a complete command
 */
 int exec_cmd (char *cmd) {
-	char **args = check_cmd(cmd, "daemonize", 2);
+	char **args = check_cmd(cmd, "daemonize");
 	if (args[0] != NULL) {
 
 		printf("Creating new daemon for the program: %s\n", args[1]);
-		if (fork() == 0) {
+//		if (fork() == 0) {
 			make_daemon(args[1]);
-		}
-
+//		}
 		return 1;
 	}
 
 	FREE_CHECK_CMD_ARGS(args);
 
-	args = check_cmd(cmd, __CMD_BG__, 2);
+	args = check_cmd(cmd, __CMD_BG__);
 	if (args[0] != NULL) {
 		bg(atoi(args[1]));
 		return 1;
@@ -204,7 +203,7 @@ int exec_cmd (char *cmd) {
 
 	FREE_CHECK_CMD_ARGS(args);
 
-	args = check_cmd(cmd, __CMD_FG__, 2);
+	args = check_cmd(cmd, __CMD_FG__);
 	if (args[0] != NULL) {
 		fg(atoi(args[1]));
 		return 1;
@@ -212,7 +211,7 @@ int exec_cmd (char *cmd) {
 
 	FREE_CHECK_CMD_ARGS(args);
 
-	args = check_cmd(cmd, __CMD_JOBS__, 1);
+	args = check_cmd(cmd, __CMD_JOBS__);
 	if (args[0] != NULL) {
 		print_details();
 		return 1;

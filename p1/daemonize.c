@@ -6,10 +6,11 @@
 #include <fcntl.h>
 
 #include "constants.h"
+#include "exec_cmd.h"
 
 // Call from the child process, child process will exit
 // Donot call direclty from the shell command
-void make_daemon(char *canonical_cmd) {
+void make_daemon(char *cmd) {
 	// Unset creation mask, so that daemon can freely do what it want with file
 	umask(0);
 	pid_t chpid = fork();
@@ -37,7 +38,11 @@ void make_daemon(char *canonical_cmd) {
 	int max_possible_fd;
 	
 	max_possible_fd = sysconf(_SC_OPEN_MAX);
+
 	if(max_possible_fd == -1) max_possible_fd = __MAX_FD_LIMIT__;
+
+//	int fd = open("daemon_log", O_WRONLY, 0664);
+//	write(fd, cmd, 10);
 
 	for(int i = 0; i < max_possible_fd; ++i) close(i);
 
@@ -48,7 +53,7 @@ void make_daemon(char *canonical_cmd) {
 
 	if(fd0 != 0 || fd1 != 1 || fd2 != 2) exit(-1);
 
-	execl(canonical_cmd, "test", (char*)NULL);
+	exec_cmd(cmd);
 }
 
 /*int main() {

@@ -5,30 +5,27 @@
 #include "constants.h"
 #include "parse_cmd.h"
 
-char ** check_cmd (char *in_cmd, char *req_cmd, int req_arg_count) {
-	char **args = malloc(req_arg_count * sizeof(char *));
+char ** check_cmd (char *in_cmd, char *req_cmd) {
+	char **args = malloc(2 * sizeof(char *));
 	char *in_cmd_copy = strdup(in_cmd);
-	if (req_arg_count >= 1) {
-		char *token = strtok(in_cmd_copy, " ");
 
-		if (token != NULL && strcmp(token, req_cmd) == 0) {
-			int arg_count = 0;
+	char *token = strtok(in_cmd_copy, " ");
 
-			while (token != NULL && arg_count < req_arg_count) {
-				args[arg_count] = strdup(token);
-				arg_count++;
-				token = strtok(NULL, " ");
-			}
-
-			if (arg_count == req_arg_count && token == NULL) {
-				args[arg_count] = NULL;
-				free(in_cmd_copy);
-				return args;
-			}
-			else {
-				printf("%s: command needs exactly %d arguments\n", req_cmd, req_arg_count);
-			}
+	if (token != NULL && strcmp(token, req_cmd) == 0) {
+		if (token != NULL) {
+			args[0] = strdup(token);
+			token = strtok(NULL, " ");
 		}
+
+		if (token != NULL) {
+			args[1] = strdup(in_cmd + strlen(args[0]) + 1);
+		}
+		else {
+			args[1] = NULL;
+		}
+
+		free(in_cmd_copy);
+		return args;
 	}
 
 	free(in_cmd_copy);
