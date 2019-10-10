@@ -19,6 +19,12 @@ int main() {
 		ssize_t cmd_size_act = getline(&cmd_buf, &cmd_size, stdin);
 		if(cmd_size_act == -1 || cmd_size_act == 0) { /* error */ }
 		cmd_buf[cmd_size_act-1] = 0;
+		bool is_bg_cmd = false;
+
+		if (cmd_buf[cmd_size_act - 2] == '&') {
+			cmd_buf[cmd_size_act - 2] = 0;
+			is_bg_cmd = true;
+		}
 
 		int p_sync_fg[2];
 		pipe(p_sync_fg);
@@ -40,6 +46,7 @@ int main() {
 			printf("\tProcess Id: %d\n", curr_pid);
 			printf("\tProcess Group Id: %d\n", getpgid(curr_pid));
 			printf("\n");
+
 			exec_cmd(cmd_buf);
 		}
 		else {
@@ -48,11 +55,14 @@ int main() {
 				printf("Unable to create a new process group. Exiting command...\n");
 				exit(0);
 			}
-			signal(SIGTTOU, SIG_IGN);
-			if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
-					printf("Unable to set process group as foreground. Exiting command...\n");
-					exit(0);
-       		}
+
+			if (!is_bg_cmd) {
+				signal(SIGTTOU, SIG_IGN);
+				if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
+						printf("Unable to set process group as foreground. Exiting command...\n");
+						exit(0);
+       			}
+			}
 
 			write(p_sync_fg[1], "TTT", 3);
 
@@ -64,8 +74,12 @@ int main() {
                		!WIFEXITED(child_executer_status)			&&
                		!WIFSTOPPED(child_executer_status)
         	);
-			tcsetpgrp(0, getpid());
-			signal(SIGTTOU, SIG_DFL);
+
+			if (!is_bg_cmd) {
+				tcsetpgrp(0, getpid());
+				signal(SIGTTOU, SIG_DFL);
+			}
+
 			printf("\n================================================================\n\n");
 		}
 		//exec_cmd(cmd_buf);
