@@ -197,21 +197,21 @@ int exec_cmd (char *cmd) {
 			}
 
 			int p_sync_fg[2];
-	        pipe(p_sync_fg);
+			pipe(p_sync_fg);
 
 			pid_t child_executer = fork();
 
-        	if(child_executer < 0) {
-            	printf("Error spawning child. Exiting...\n");
+			if(child_executer < 0) {
+				printf("Error spawning child. Exiting...\n");
 				exit(0);
-        	}
+			}
 			else if (child_executer == 0) {
 				close(p_sync_fg[1]);
 
             	char buf_sync_fg[3];
             	int n = read(p_sync_fg[0], buf_sync_fg, 3);
 
-            	setpgid(0, child_executer);
+            	//setpgid(0, child_executer);
 
 				if (READ_EXEC_WRITE(read_end, single_cmd, write_end) == 0) {
 					exit(1);
@@ -220,7 +220,7 @@ int exec_cmd (char *cmd) {
 			else {
 				close(p_sync_fg[0]);
 
-            	if(setpgid(child_executer, child_executer) == -1) {
+            	/*if(setpgid(child_executer, child_executer) == -1) {
                 	printf("Unable to create a new process group. Exiting command...\n");
                 	exit(0);
             	}
@@ -230,7 +230,7 @@ int exec_cmd (char *cmd) {
             	if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
                 	printf("Unable to set process group as foreground. Exiting command...\n");
                 	exit(0);
-            	}
+            	}*/
 
             	write(p_sync_fg[1], "TTT", 3);
 
@@ -243,8 +243,8 @@ int exec_cmd (char *cmd) {
                     	!WIFSTOPPED(child_executer_status)
                	);
 
-				tcsetpgrp(0, getpid());
-				signal(SIGTTOU, SIG_DFL);
+				/*tcsetpgrp(0, getpid());
+				signal(SIGTTOU, SIG_DFL);*/
 
 			}
 		}
