@@ -25,6 +25,9 @@ char ** check_cmd (char *in_cmd, char *req_cmd, int req_arg_count) {
 				free(in_cmd_copy);
 				return args;
 			}
+			else {
+				printf("%s: command needs exactly %d arguments\n", req_cmd, req_arg_count);
+			}
 		}
 	}
 
