@@ -20,6 +20,8 @@ int main() {
 		if(cmd_size_act == -1 || cmd_size_act == 0) { /* error */ }
 		cmd_buf[cmd_size_act-1] = 0;
 
+//		if (strcmp(cmd_buf, 
+
 		exec_cmd(cmd_buf);
 	}
 }

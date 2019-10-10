@@ -5,6 +5,38 @@
 #include "constants.h"
 #include "parse_cmd.h"
 
+char ** check_cmd (char *in_cmd, char *req_cmd, int req_arg_count) {
+	char **args = malloc(req_arg_count * sizeof(char *));
+	char *in_cmd_copy = strdup(in_cmd);
+	if (req_arg_count >= 1) {
+		char *token = strtok(in_cmd_copy, " ");
+
+		if (token != NULL && strcmp(token, req_cmd) == 0) {
+			int arg_count = 0;
+
+			while (token != NULL && arg_count < req_arg_count) {
+				args[arg_count] = strdup(token);
+				arg_count++;
+				token = strtok(NULL, " ");
+			}
+
+			if (arg_count == req_arg_count && token == NULL) {
+				args[arg_count] = NULL;
+				free(in_cmd_copy);
+				return args;
+			}
+		}
+	}
+
+	free(in_cmd_copy);
+	args[0] = NULL;
+	return args;
+}
+
+void FREE_CHECK_CMD_ARGS (char **args) {
+	free(args);
+}
+
 PARSED_CMD* update_parsed_cmd (PARSED_CMD prev_parsed, char *delim) {
 	PARSED_CMD* new_parsed = (PARSED_CMD *) malloc(sizeof(PARSED_CMD));
 	new_parsed->dim = prev_parsed.dim;
@@ -74,6 +106,7 @@ void FREE_CMD_LIST (char **cmd_list) {
 }
 
 /*int main () {
-	parse_cmd("a|b#c|dSq");
+//	parse_cmd("a|b#c|dSq");
+//	if(check_cmd("bg 123", "bg", 2)) printf("asdfasdf\n");
 }*/
 

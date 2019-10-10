@@ -98,13 +98,51 @@ int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 	Execute a complete command
 */
 int exec_cmd (char *cmd) {
+	char **args = check_cmd(cmd, "daemonize", 2);
+	if (args[0] != NULL) {
+		printf("entered daemonize\n");
+
+		int i = 0;
+		while (args[i] != NULL) {
+			printf("arg %d: %s\n", i, args[i]);
+			i++;
+		}
+		return 1;
+	}
+
+	FREE_CHECK_CMD_ARGS(args);
+
+	args = check_cmd(cmd, "bg", 2);
+	if (args[0] != NULL) {
+		printf("entered bg\n");
+
+		int i = 0;
+		while (args[i] != NULL) {
+			printf("arg %d: %s\n", i, args[i]);
+			i++;
+		}
+		return 1;
+	}
+
+	FREE_CHECK_CMD_ARGS(args);
+
+	args = check_cmd(cmd, "fg", 2);
+	if (args[0] != NULL) {
+		printf("entered fg\n");
+
+		int i = 0;
+		while (args[i] != NULL) {
+			printf("arg %d: %s\n", i, args[i]);
+			i++;
+		}
+		return 1;
+	}
+
+	FREE_CHECK_CMD_ARGS(args);
+
+
 	PARSED_CMD *parsed = parse_cmd(cmd);
 
-	// creating pipe
-//	int p[2];
-//	pipe(p);
-
-//	PIPE_INFO *pipe_pipe = CREATE_PIPE_TYPE(PIPE, p[0], p[1]);
 	PIPE_INFO *pipe_pipe;
 	PIPE_INFO *shm_pipe;
 	PIPE_INFO *msgq_pipe;
