@@ -9,6 +9,7 @@
 #include "constants.h"
 #include "get_canonical_path.h"
 #include "exec_cmd.h"
+#include "proc_management.h"
 
 int main() {
 	while(true) {
@@ -61,21 +62,53 @@ int main() {
 				if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
 						printf("Unable to set process group as foreground. Exiting command...\n");
 						exit(0);
-       			}
+					}
 			}
 
 			write(p_sync_fg[1], "TTT", 3);
 
-			int child_executer_status;
+			/*int child_executer_status;
 			do {
 				waitpid(child_executer, &child_executer_status, WUNTRACED);
        		} while(
                		!WIFSIGNALED(child_executer_status)			&&
                		!WIFEXITED(child_executer_status)			&&
                		!WIFSTOPPED(child_executer_status)
-        	);
+        	);*/
+
+			struct command *cm = malloc(sizeof(struct command));
+			cm->pgid = child_executer;
+			cm->crm = CRM_RUN;
+			cm->cmd = cmd_buf;
+			if(is_bg_cmd) {
+				cm->tcm = TC_BG;
+				add_to_group(cm);
+			}
 
 			if (!is_bg_cmd) {
+				cm->tcm = TC_FG;
+				add_to_group(cm);
+	    	int child_executer_status;
+				do {
+					waitpid(child_executer, &child_executer_status, WUNTRACED);
+       	} while(
+               	!WIFSIGNALED(child_executer_status)			&&
+               	!WIFEXITED(child_executer_status)			&&
+               	!WIFSTOPPED(child_executer_status)
+          	);
+
+			  // Foreground process gets stopped and goes to background
+			 	if(WIFSTOPPED(child_executer_status)) {
+					set_cmd_by_pgid(child_executer, TC_BG, CRM_STP);
+			 	}
+			 
+			 	// Foreground process gets terminated
+			 	else if(WIFEXITED(child_executer_status) || WIFSIGNALED(child_executer_status)) {
+					remove_from_group_by_pgid(child_executer);
+				 }
+
+				/*do something with the child executer status*/
+
 				tcsetpgrp(0, getpid());
 				signal(SIGTTOU, SIG_DFL);
 			}

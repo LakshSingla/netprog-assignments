@@ -10,7 +10,7 @@ struct parsed_cmd {
 typedef struct parsed_cmd PARSED_CMD;
 
 PARSED_CMD* parse_cmd (char *cmd);
-char ** check_cmd(char *in_cmd, char *req_cmd, int req_arg_count);
+char ** check_cmd(char *in_cmd, char *req_cmd);
 void FREE_CHECK_CMD_ARGS (char **args);
 
 #endif
