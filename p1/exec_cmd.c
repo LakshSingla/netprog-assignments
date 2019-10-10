@@ -3,6 +3,7 @@
 #include<wait.h>
 #include<stdlib.h>
 #include<string.h>
+#include<fcntl.h>
 #include<errno.h>
 
 #include "get_canonical_path.h"
@@ -69,10 +70,75 @@ int exec_single_cmd (char *cmd) {
 		}
 
 		FREE_CANONICAL_PATH(canonical_path);
+		free(tmp_cmd);
+		free(tmp_cmd2);
+		free(cmd);
 	}
 
 }
 
+char * handle_redirection (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
+	char *cmd_copy = strdup(cmd);
+
+	char *token = strtok(cmd_copy, "><");
+
+	if (strcmp(token, cmd) != 0) {
+//		printf("asdf: %c\n", *(cmd + strlen(token)));
+		char *file;
+		if (*(cmd + strlen(token) + 1) == '>') {
+			file = cmd + strlen(token) + 2;
+
+			int fd = open(file, O_CREAT | O_WRONLY | O_APPEND, 0664);
+
+			if (fd < 0) fprintf(stderr, "Cannot open file %s\n", file);
+			else {
+				if (to != NULL) {
+					close(to->write_id);
+				}
+				else {
+					close(1);
+				}
+				dup(fd);
+			}
+			return token;
+		}
+		else if (*(cmd + strlen(token)) == '>') {
+			file = cmd + strlen(token) + 1;
+			int fd = open(file, O_CREAT | O_WRONLY, 0664);
+
+			if (fd < 0) fprintf(stderr, "Cannot open file %s\n", file);
+			else {
+				if (to != NULL) {
+					close(to->write_id);
+				}
+				else {
+					close(1);
+				}
+				dup(fd);
+			}
+			return token;
+		}
+		else if (*(cmd + strlen(token)) == '<') {
+			file = cmd + strlen(token) + 1;
+
+			int fd = open(file, O_CREAT | O_RDONLY, 0664);
+
+			if (fd < 0) fprintf(stderr, "Cannot open file %s\n", file);
+			else {
+				if (from != NULL) {
+					close(from->read_id);
+				}
+				else {
+					close(0);
+				}
+				dup(fd);
+			}
+			return token;
+		}
+
+	}
+	return cmd;
+}
 
 int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 	fprintf(stderr, "**%s** command:\n", cmd);
@@ -107,8 +173,9 @@ int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 		fprintf(stderr, "\n================================================================\n\n");
 	}
 
+	char *cmd_broken = handle_redirection(from, cmd, to);
 
-	return exec_single_cmd(cmd);
+	return exec_single_cmd(cmd_broken);
 }
 
 /*
