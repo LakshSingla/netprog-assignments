@@ -75,22 +75,38 @@ int exec_single_cmd (char *cmd) {
 
 
 int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
+	fprintf(stderr, "**%s** command:\n", cmd);
+
 	int inp_size = 0, out_size = 0;
 	char inp[__MAX_OUT_SIZE__], out[__MAX_OUT_SIZE__];
 
 //	if (from != NULL) fprintf(stderr, "fds1: %d %d\n", from->read_id, from->write_id);
 //	fprintf(stderr, "fds2: %d %d\n", to->read_id, to->write_id);
 
+	int curr_pid = getpid();
+	fprintf(stderr, "\tProcess Id: %d\n", getpid());
+	fprintf(stderr, "\tProcess Group Id: %d\n\n", getpgid(curr_pid));
+
+	fprintf(stderr, "\tReading from fd ");
 	if (from != NULL) {
+		fprintf(stderr, "%d\n", from->read_id);
 		close(from->write_id);
 		close(0);
 		dup(from->read_id);
 	}
+	else fprintf(stderr, "(null)\n");
 
+	fprintf(stderr, "\tWriting to fd ");
 	if (to != NULL) {
+		fprintf(stderr, "%d\n", to->write_id);
 		close(1);
 		dup(to->write_id);
 	}
+	else {
+		fprintf(stderr, "1\n");
+		fprintf(stderr, "\n================================================================\n\n");
+	}
+
 
 	return exec_single_cmd(cmd);
 }
@@ -251,11 +267,5 @@ int exec_cmd (char *cmd) {
 
 		dim++;
 	}
-
-/*	char out[__MAX_OUT_SIZE__];
-	int numread = read(write_end->read_id, out, __MAX_OUT_SIZE__);
-	out[numread] = 0;
-	printf("out:\n%s\n", out);*/
-
-	//free(pipe_pipe);
+	exit(1);
 }

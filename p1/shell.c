@@ -35,34 +35,39 @@ int main() {
 			int n = read(p_sync_fg[0], buf_sync_fg, 3);
             	//setpgid(0, child_executer);
 
+			int curr_pid = getpid();
+			printf("Coordinating Process details:\n");
+			printf("\tProcess Id: %d\n", curr_pid);
+			printf("\tProcess Group Id: %d\n", getpgid(curr_pid));
+			printf("\n");
 			exec_cmd(cmd_buf);
-
+		}
+		else {
+			close(p_sync_fg[0]);
+			if(setpgid(child_executer, child_executer) == -1) {
+				printf("Unable to create a new process group. Exiting command...\n");
+				exit(0);
 			}
-			else {
-				close(p_sync_fg[0]);
-				if(setpgid(child_executer, child_executer) == -1) {
-					printf("Unable to create a new process group. Exiting command...\n");
-					exit(0);
-				}
-				signal(SIGTTOU, SIG_IGN);
-				if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
+			signal(SIGTTOU, SIG_IGN);
+			if(tcsetpgrp(STDIN_FILENO, child_executer) == -1) {
 					printf("Unable to set process group as foreground. Exiting command...\n");
 					exit(0);
-       	}
+       		}
 
-       	write(p_sync_fg[1], "TTT", 3);
+			write(p_sync_fg[1], "TTT", 3);
 
-	     int child_executer_status;
-			 do {
-					waitpid(child_executer, &child_executer_status, WUNTRACED);
-       	} while(
-               	!WIFSIGNALED(child_executer_status)			&&
-               	!WIFEXITED(child_executer_status)			&&
-               	!WIFSTOPPED(child_executer_status)
-          	);
-				tcsetpgrp(0, getpid());
-				signal(SIGTTOU, SIG_DFL);
-			}
+			int child_executer_status;
+			do {
+				waitpid(child_executer, &child_executer_status, WUNTRACED);
+       		} while(
+               		!WIFSIGNALED(child_executer_status)			&&
+               		!WIFEXITED(child_executer_status)			&&
+               		!WIFSTOPPED(child_executer_status)
+        	);
+			tcsetpgrp(0, getpid());
+			signal(SIGTTOU, SIG_DFL);
+			printf("\n================================================================\n\n");
+		}
 		//exec_cmd(cmd_buf);
 	}
 }
