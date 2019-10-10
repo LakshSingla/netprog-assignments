@@ -7,6 +7,7 @@
 
 #include "get_canonical_path.h"
 #include "parse_cmd.h"
+#include "daemonize.h"
 #include "constants.h"
 
 enum pipe_medium {PIPE, MSGQ, SHM};
@@ -100,13 +101,12 @@ int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 int exec_cmd (char *cmd) {
 	char **args = check_cmd(cmd, "daemonize", 2);
 	if (args[0] != NULL) {
-		printf("entered daemonize\n");
 
-		int i = 0;
-		while (args[i] != NULL) {
-			printf("arg %d: %s\n", i, args[i]);
-			i++;
+		printf("Creating new daemon for the program: %s\n", args[1]);
+		if (fork() == 0) {
+			make_daemon(args[1]);
 		}
+
 		return 1;
 	}
 
