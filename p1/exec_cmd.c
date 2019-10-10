@@ -1,10 +1,10 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<wait.h>
-#include<stdlib.h>
-#include<string.h>
-#include<fcntl.h>
-#include<errno.h>
+#include	<stdio.h>
+#include	<unistd.h>
+#include	<wait.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<fcntl.h>
+#include	<errno.h>
 
 #include "get_canonical_path.h"
 #include "parse_cmd.h"
@@ -146,9 +146,6 @@ int READ_EXEC_WRITE (PIPE_INFO *from, char *cmd, PIPE_INFO *to) {
 
 	int inp_size = 0, out_size = 0;
 	char inp[__MAX_OUT_SIZE__], out[__MAX_OUT_SIZE__];
-
-//	if (from != NULL) fprintf(stderr, "fds1: %d %d\n", from->read_id, from->write_id);
-//	fprintf(stderr, "fds2: %d %d\n", to->read_id, to->write_id);
 
 	int curr_pid = getpid();
 	fprintf(stderr, "\tProcess Id: %d\n", getpid());

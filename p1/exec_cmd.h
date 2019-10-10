@@ -1,5 +1,5 @@
-#ifndef _EXEC_CMD_H
-#define _EXEC_CMD_H
+#ifndef _EXEC_CMD_H_
+#define _EXEC_CMD_H_
 
 int exec_cmd(char *);
 

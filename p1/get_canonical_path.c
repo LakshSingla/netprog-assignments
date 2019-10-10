@@ -19,18 +19,16 @@ char *get_canonical_path(char *exec_path){
 		char *token = strtok(env_path, ":");
 		bool found = false;
 		while(token != NULL) {
-			//printf("TOK: %s\n", token);
 			char *maybe_path = strdup(token);
 			maybe_path = realloc(maybe_path, strlen(maybe_path) + __MAX_CMD_SIZE__ + 10); //10 -> arbitrary padding
 			strcat(maybe_path, "/");
 			strcat(maybe_path, exec_path);
-			//printf("MB_PATH: %s\n", maybe_path);
 
 			struct stat sbuf;
 
 			if(stat(maybe_path, &sbuf) == -1) {
 				if(errno == ENOENT) {
-					//return NULL;
+					//pass
 				}
 				else {
 					printf(__EMSG_UNHANDLED__);
