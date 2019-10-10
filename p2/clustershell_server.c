@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 			exit(0);
 		}
 
-		printf("Handling client %s\n", inet_ntoa(clnt_addr.sin_addr));
+		printf("* Handling client %s\n", inet_ntoa(clnt_addr.sin_addr));
 
 		pid_t ch_handler = fork();
 
@@ -48,11 +48,11 @@ int main(int argc, char **argv) {
 				int n = read(clnt_sock, cmd_buf, __MAX_CMD_SIZE__);
 				if(n < 0) { break; exit(-1); }
 				cmd_buf[n] = '\0';
-				printf("Received command: %s\n", cmd_buf);
+				printf("* `%s` recieved from `%s`\n", cmd_buf, inet_ntoa(clnt_addr.sin_addr));
 
 
 				if(strcmp(cmd_buf, __NODES_CMD__) == 0) {
-					printf("Nodes command recieved\n");	
+					//printf("Nodes command recieved\n");	
 					FILE *fp = fopen(__CONFIG_FILE__, "r");
 					if(fseek(fp, 0L, SEEK_END) != 0) {
 					
@@ -80,13 +80,12 @@ int main(int argc, char **argv) {
 					char *in_cmd = PARSE_GET_VAL(pcmd, cmd_it);
 
 					if(cl[1] == '*') {
-						printf("Handling wild\n");
 						char **cur_ip = config_ips;
 						char concat_resp[__MAX_OUT_SIZE__+1] = {0};
 						memset(concat_resp, 0, __MAX_OUT_SIZE__ + 1 );
 						int concat_offset = 0;
 						while(*cur_ip) {
-							printf("XXX\n");
+							//printf("XXX\n");
 							int con_fd = clnt_side_setup(*cur_ip, __CLIENT_PORT__);				
 							char response[__MAX_CMD_SIZE__ + 1 + __MAX_OUT_SIZE__ + 1] = {0};	
 							memset(response, 0, __MAX_CMD_SIZE__ + 1 + __MAX_OUT_SIZE__ + 1 );
@@ -101,7 +100,6 @@ int main(int argc, char **argv) {
 							int tmp_buf_size;
 							tmp_buf_size = read(con_fd, tmp_buf, __MAX_OUT_SIZE__+1);
 							tmp_buf[tmp_buf_size] = 0;
-							printf("%s\n", tmp_buf);
 							strcat(concat_resp, tmp_buf);
 							close(con_fd);
 							++cur_ip;	
@@ -125,13 +123,13 @@ int main(int argc, char **argv) {
 						strcpy(response+strlen(in_cmd)+1, input_buf);
 						int response_size = strlen(in_cmd)+1+strlen(input_buf)+1;
 
-						printf("Sending cmd: %s\n", response);
+						//printf("Sending cmd: %s\n", response);
 						int nbytes = write(con_fd, response, response_size);
 						if(nbytes != response_size) {
 							printf("Error in writing. Exiting...\n");	
 						}
 						input_buf_size = read(con_fd, input_buf, __MAX_OUT_SIZE__+1);
-						printf("Pipe out: %s\n", input_buf);
+						//printf("Pipe out: %s\n", input_buf);
 						close(con_fd);
 					}
 					++cmd_it;
@@ -139,9 +137,9 @@ int main(int argc, char **argv) {
 
 				input_buf[input_buf_size] = 0;
 				++input_buf_size;
-				printf("Received output: %s\n", input_buf);
+				//printf("Received output: %s\n", input_buf);
 				write(clnt_sock, input_buf, input_buf_size);
-				printf("reached here\n");
+				//printf("reached here\n");
 			}
 			close(clnt_sock);
 		}

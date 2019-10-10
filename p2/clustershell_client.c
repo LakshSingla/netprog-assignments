@@ -17,6 +17,7 @@ struct cmd_out {
 void run_shell (int serv_port) {
 	int con_fd = clnt_side_setup(NULL, serv_port);
 	while (1) {
+		printf("========================================\n");
 		printf("Enter shell commands\n");
 		printf("> ");
 
@@ -42,7 +43,8 @@ void run_shell (int serv_port) {
 
 		buf[numread_server] = '\0';
 
-		printf("result: %s\n", buf);
+		printf("%s\n", buf);
+		printf("========================================\n");
 	}
 	close(con_fd);
 }
