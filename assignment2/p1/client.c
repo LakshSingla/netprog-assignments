@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "constants.h"
+#include "tcp_helpers.h"
 
 int main() {
 	while(true) {
@@ -16,5 +18,8 @@ int main() {
 
 
 		printf("%s\n", cmd_buf);
+
+		int confd = clnt_side_setup(NULL, __NAME_SERVER_PORT__);
+		write(confd, cmd_buf, cmd_size_act);
 	}
 }
