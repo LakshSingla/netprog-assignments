@@ -4,6 +4,8 @@
 #include<stdbool.h>
 #include<sys/select.h>
 #include<arpa/inet.h>
+#include<fcntl.h>
+#include<errno.h>
 
 #include "constants.h"
 #include "tcp_helpers.h"
@@ -56,25 +58,33 @@ int main () {
 		for (int x = 0; x <= maxj; x++) {
 			// check clients
 			int csock = clients[x];
+			int flags = fcntl(csock, F_GETFL, 0);
+			fcntl(csock, F_SETFL, flags | O_NONBLOCK);
+
 			if (csock == -1) continue;
 
 			if (FD_ISSET(csock, &rset)) {
 				int nb;
 				char buf[1024];
-				nb = read(csock, buf, 1024);
+				while (true) {
+					nb = read(csock, buf, 1024);
 
-				if (nb < 0) {
-					perror("Error reading from client");
-				}
-				else if (nb == 0) {
-					close(csock);
-					FD_CLR(csock, &allset);
-					clients[x] = 0;
-				}
-				else {
-					buf[nb] = 0;
-					printf("Received:\n%s\n", buf);
-				}
+					if (nb < 0) {
+						if (errno != EWOULDBLOCK && errno != EAGAIN)
+							perror("Error reading from client");
+						break;
+					}
+					else if (nb == 0) {
+						close(csock);
+						FD_CLR(csock, &allset);
+						clients[x] = 0;
+						break;
+					}
+					else {
+						buf[nb] = 0;
+						printf("Received:\n%s\n", buf);
+					}
+				}			
 			}
 		}
 	}

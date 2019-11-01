@@ -5,8 +5,10 @@
 
 #include "constants.h"
 #include "tcp_helpers.h"
+#include "upload_file.h"
 
 int main() {
+	int confd = clnt_side_setup(NULL, __NAME_SERVER_PORT__);
 	while(true) {
 		printf(__PROMPT__);	
 		size_t cmd_size = __MAX_CMD_SIZE__+1;
@@ -19,7 +21,6 @@ int main() {
 
 		printf("%s\n", cmd_buf);
 
-		int confd = clnt_side_setup(NULL, __NAME_SERVER_PORT__);
-		write(confd, cmd_buf, cmd_size_act);
+		upload_file("bigfile.txt", confd);
 	}
 }
