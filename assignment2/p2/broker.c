@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -12,6 +13,38 @@
 #include "tcp_helpers.h"
 #include "broker.h"
 #include "broker_sub_methods.h"
+
+/*struct shared_mem_structure {
+	int n;
+	struct l_topic lt[100];
+};*/
+
+
+// Lock sem before it
+void update_shared_memory(struct shared_mem_structure *addr, const char *name) {
+	int count = addr->n;
+	for(int i = 0; i < count; ++i) {
+		if(strcmp((addr->lt[i]).topic_name, name) == 0) return;
+	}
+	strcpy((addr->lt[count]).topic_name, name);
+	(addr->lt[count]).no_messages = 0;
+	addr->n = count+1;
+	return;
+}
+
+void add_message(struct shared_mem_structure *addr, const char *name, const char *msg) {
+	
+	int count = addr->n;
+	for(int i = 0; i < count; ++i) {
+		if(strcmp((addr->lt[i]).topic_name, name) == 0) {
+			strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
+			(addr->lt[i]).no_messages += 1;
+			return;
+		}
+	}
+}
+
+// Unlock sem before it
 
 struct broker BROKERS[3] = {
 	{"127.0.0.1", 4000, "127.0.0.1", 5000, "127.0.0.1", 6000},
@@ -87,9 +120,60 @@ int main (int argc, char *argv[]) {
 		exit(0);
 	}
 
+	int shmkey3 = ftok("./broker.c", 3);
+	printf("%d\n", sizeof(struct shared_mem_structure));
+	int shm3 = shmget (shmkey3, sizeof(struct shared_mem_structure), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	if(shm3 == -1) {
+		perror("Error with shmget()");
+		exit(0);
+	}
+
+	struct shared_mem_structure *l_mem = shmat(shm3, NULL, 0);
+	l_mem->n = 0;
+
+	printf("%d\n", l_mem->n);
+	if (l_mem == (void *) -1) {
+		perror("Error with shmat()");
+		exit(0);
+	}
+
+	/*if(fork() == 0) {
+		update_shared_memory(l_mem, "robin");
+		exit(0);
+	}
+	wait(NULL);
+	if(fork() == 0) {
+		update_shared_memory(l_mem, "robin2");
+		exit(0);
+	}
+	wait(NULL);
+	if(fork() == 0) {
+		update_shared_memory(l_mem, "robin");
+		exit(0);
+	}
+	wait(NULL);	
+
+	add_message(l_mem, "robin", "msg1");
+	add_message(l_mem, "robin2", "msg1");
+	add_message(l_mem, "robin", "msg1");
+	add_message(l_mem, "robin", "msg2");
+	if(fork() == 0) {
+		add_message(l_mem, "robin2", "x");
+		exit(0);
+	}
+
+	wait(NULL);
+
+	printf("%d\n", l_mem->n);
+	for(int i = 0; i < l_mem->n; ++i) {
+		printf("%s\n", (l_mem->lt[i]).topic_name);	
+		for(int j = 0; j < (l_mem->lt[i]).no_messages; ++j) {
+			printf("%s\n", (l_mem->lt[i]).msg_arr[j]);	
+		}
+	}
 
 	*curr_topic_count = 0;
-
+*/
 	int serv_sock = serv_side_setup (self_port); 
 
 	while (true) {
@@ -161,9 +245,9 @@ int main (int argc, char *argv[]) {
 						exit(0);
 					}
 					printf("topic: %s\n", topic);
-					handle_topic_create (clnt_sock, topic);
+					handle_topic_create (clnt_sock, topic, l_mem);
 					/*printf("created: %s\n", MAIN_TOPIC_LIST[*curr_topic_count-1]->topic);*/
-					printf("created %d: %d\n", *curr_topic_count - 1, topic[*curr_topic_count-1]);
+					printf("created %d: %d\n", l_mem->n, topic[l_mem->n - 1]);
 					close(clnt_sock);
 				}
 				else if (cmd_code[0] == '1') {
