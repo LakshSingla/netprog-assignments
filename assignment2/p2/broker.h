@@ -1,3 +1,6 @@
+#include <arpa/inet.h>
+#include "constants.h"
+
 struct broker {
 	char ip[INET_ADDRSTRLEN];
 	int port;
@@ -7,8 +10,12 @@ struct broker {
 	int n2_port;
 };
 
-struct broker BROKERS[3] = {
-	{"127.0.0.1", 4000, "127.0.0.1", 5000, "127.0.0.1", 6000},
-	{"127.0.0.1", 5000, "127.0.0.1", 4000, "127.0.0.1", 6000},
-	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
+extern struct broker BROKERS[3];
+
+struct topic_msg_list {
+	char *topic;
+	char *msgs[__MAX_MSG_COUNT__];
 };
+
+extern struct topic_msg_list MAIN_TOPIC_LIST[__MAX_TOPIC_COUNT__];
+extern int curr_topic_count;

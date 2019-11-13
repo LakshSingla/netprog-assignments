@@ -9,6 +9,15 @@
 #include "constants.h"
 #include "tcp_helpers.h"
 #include "broker.h"
+#include "broker_sub_methods.h"
+
+struct broker BROKERS[3] = {
+	{"127.0.0.1", 4000, "127.0.0.1", 5000, "127.0.0.1", 6000},
+	{"127.0.0.1", 5000, "127.0.0.1", 4000, "127.0.0.1", 6000},
+	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
+};
+
+int curr_topic_count = 0;
 
 int main (int argc, char *argv[]) {
 	if (argc != 2){
@@ -88,6 +97,18 @@ int main (int argc, char *argv[]) {
 				}
 				if (cmd_code[0] == '0') {
 					printf("publisher create\n");
+
+					char topic[__MAX_TOPIC_SIZE__];
+					int nt = read(clnt_sock, topic, __MAX_TOPIC_SIZE__);
+					if (nt <= 0) {
+						printf("Error reading topic from publisher\n");
+						printf("Closing Connection...");
+						close(clnt_sock);
+						exit(0);
+					}
+					printf("topic: %s\n", topic);
+					handle_topic_create (clnt_sock, topic);
+					close(clnt_sock);
 				}
 				else if (cmd_code[0] == '1') {
 					printf("publisher send\n");

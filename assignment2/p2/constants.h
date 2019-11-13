@@ -6,6 +6,10 @@
 #define __MAX_PENDING__			1024
 #define __MAX_CONFIG_SIZE__		50
 #define __MAX_MSG_SIZE__		512
+#define __MAX_MSG_COUNT__		100
+#define __MAX_TOPIC_SIZE__		50
+#define __MAX_TOPIC_COUNT__		50
+#define __MAX_RESPONSE_SIZE__		50
 
 
 #define __SUB_CMD__			"subscribe"

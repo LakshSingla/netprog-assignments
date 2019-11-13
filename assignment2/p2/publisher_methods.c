@@ -23,9 +23,20 @@ void create_topic (char *topic, char *broker_ip, int broker_port) {
 
 	int con_fd = clnt_side_setup(broker_ip, broker_port);
 
+	// write cmd
 	int n = write(con_fd, msg, msg_size);
 	if (n != msg_size) {
 		printf("Error with write()\n");
+	}
+
+	// read response
+	char resp[__MAX_RESPONSE_SIZE__];
+	int nr = read(con_fd, resp, __MAX_RESPONSE_SIZE__);
+	if (nr <= 0) {
+		printf("Error reading response\n");
+	}
+	else {
+		printf("\n%s\n", resp);
 	}
 	close(con_fd);
 }
