@@ -73,9 +73,8 @@ int main (int argc, char *argv[]) {
  */
 
 	// Shared memory for
-	int shmkey2 = ftok("./broker.c", 2);
-	int shm2 = shmget (shmkey2, sizeof(int) * __MAX_TOPIC_COUNT__, 
-			IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	int shmkey2 = ftok("./broker.h", 2);
+	int shm2 = shmget (shmkey2, sizeof(int) * __MAX_TOPIC_COUNT__, IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (shm2 == -1) {
 		perror("Error with shmget()");
 		exit(0);
@@ -149,6 +148,8 @@ int main (int argc, char *argv[]) {
 					close(clnt_sock);
 					exit(0);
 				}
+
+				
 				if (cmd_code[0] == '0') {
 					printf("publisher create\n");
 
@@ -161,6 +162,7 @@ int main (int argc, char *argv[]) {
 						exit(0);
 					}
 					printf("topic: %s\n", topic);
+	
 					handle_topic_create (clnt_sock, topic);
 					/*printf("created: %s\n", MAIN_TOPIC_LIST[*curr_topic_count-1]->topic);*/
 					printf("created %d: %d\n", *curr_topic_count - 1, topic[*curr_topic_count-1]);
@@ -168,6 +170,22 @@ int main (int argc, char *argv[]) {
 				}
 				else if (cmd_code[0] == '1') {
 					printf("publisher send\n");
+
+					char topic_n_msg[__MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__];
+					int nm = read(clnt_sock, topic_n_msg, __MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__);
+					if (nm <= 0) {
+						printf("Error reading message from publisher\n");
+						printf("Closing Connection...");
+						close(clnt_sock);
+						exit(0);
+					}
+					/*printf("here: %s\n", topic_n_msg);*/
+
+					char *tok = strtok(topic_n_msg, "#");
+					char *topic = strdup(tok);
+					tok = strtok(NULL, "#");
+					char *msg = strdup(tok);
+					handle_msg_recv(clnt_sock, topic, msg);
 				}
 				else if (cmd_code[0] == '2') {
 					printf("publisher send file\n");

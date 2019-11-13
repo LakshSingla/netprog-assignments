@@ -54,11 +54,17 @@ void handle_topic_create (int fd, char *topic) {
 			/*MAIN_TOPIC_LIST[*curr_topic_count]->topic = (char *) malloc((strlen(topic) + 1) * sizeof(char));*/
 			/*strcpy(MAIN_TOPIC_LIST[*curr_topic_count]->topic, topic);*/
 			printf("initial topic = %d\n", topic[*curr_topic_count]);
-			topic[*curr_topic_count] = 123;
+			/*topic[*curr_topic_count] = 123;*/
+			*(topic + *curr_topic_count) = 123;
 			*curr_topic_count = *curr_topic_count + 1;
 			reply = "Topic successfully created!";
 		}
 	}
 
 	write(fd, reply, sizeof(char) * (strlen(reply) + 1));
+}
+
+void handle_msg_recv (int clnt_sock, char *topic, char *msg) {
+	printf("topic: %s\nmsg: %s\n", topic, msg);
+
 }

@@ -22,4 +22,4 @@ struct topic_msg_list {
 
 extern struct topic_msg_list **MAIN_TOPIC_LIST;
 extern int *curr_topic_count;
-extern int **topic;
+extern int *topic;

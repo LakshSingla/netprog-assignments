@@ -22,8 +22,10 @@ void run_cmd (char *cmd_buf, char *broker_ip, int broker_port) {
 	}
 	else if (strcmp(cmd, __PUB_SEND_CMD__) == 0) {
 		// send message to a topic
-		/*send_msg (topic, msg, con_fd);*/
-
+		
+		tok = strtok(NULL, " ");
+		char *msg = strdup(tok);
+		send_msg (topic, msg, con_fd);
 	}
 	else if (strcmp(cmd, __PUB_SENDFILE_CMD__) == 0) {
 		// send file as a message to a topic

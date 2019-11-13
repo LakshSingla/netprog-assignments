@@ -4,6 +4,10 @@
 #include "tcp_helpers.h"
 #include "constants.h"
 #include "subscriber_run_cmd.h"
+#include "subscriber.h"
+
+char *subscribed_topics[__MAX_TOPIC_COUNT__];
+char subscribed_topics_len = 0;
 
 int main (int argc, char *argv[]) {
 	if (argc != 2) {
@@ -25,8 +29,6 @@ int main (int argc, char *argv[]) {
 		if(cmd_size_act  == -1 || cmd_size_act == 0 || cmd_size_act == 1 
 				&& cmd_buf[0] == '\n') continue;
 		cmd_buf[cmd_size_act-1] = 0;
-
-
 
 		printf("%s\n", cmd_buf);
 		
