@@ -11,7 +11,7 @@ void add_prefix (char *msg, char *class, char *code) {
 	strcat(msg, code);
 }
 
-void create_topic (char *topic, char *broker_ip, int broker_port) {
+void create_topic (char *topic, int con_fd) {
 	int msg_size = 4 + 1 + strlen(topic);
 	char msg[msg_size];
 	memset(msg, 0, msg_size);
@@ -20,8 +20,6 @@ void create_topic (char *topic, char *broker_ip, int broker_port) {
 	add_prefix(msg, __PUB_CLASS__, __PUB_CREATE_CODE__);
 	strcat(msg, topic);
 	msg[3] = 0;
-
-	int con_fd = clnt_side_setup(broker_ip, broker_port);
 
 	// write cmd
 	int n = write(con_fd, msg, msg_size);

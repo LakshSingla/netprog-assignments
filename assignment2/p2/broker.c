@@ -6,6 +6,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
 #include "constants.h"
 #include "tcp_helpers.h"
 #include "broker.h"
@@ -17,7 +19,9 @@ struct broker BROKERS[3] = {
 	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
 };
 
-int curr_topic_count = 0;
+int *curr_topic_count;
+struct topic_msg_list **MAIN_TOPIC_LIST;
+int *topic;
 
 int main (int argc, char *argv[]) {
 	if (argc != 2){
@@ -27,6 +31,7 @@ int main (int argc, char *argv[]) {
 
 	int my_index = atoi(argv[1]);
 
+	// initialize self and neighbouring ips
 	char *self_ip = BROKERS[my_index].ip;
 	int self_port = BROKERS[my_index].port;
 
@@ -36,6 +41,55 @@ int main (int argc, char *argv[]) {
 	char *n2_ip = BROKERS[my_index].n2_ip;
 	int n2_port = BROKERS[my_index].n2_port;
 	
+	// Shared memory for curr_topic_count creation
+	int shmkey1 = ftok("./broker.c", 1);
+	int shm1 = shmget (shmkey1, sizeof(int), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	if (shm1 == -1) {
+		perror("Error with shmget()");
+		exit(0);
+	}
+
+	curr_topic_count = shmat(shm1, NULL, 0);
+	if (curr_topic_count == (void *) -1) {
+		perror("Error with shmat()");
+		exit(0);
+	}
+
+	// Shared memory for MAIN_TOPIC_LIST
+/*
+ *        int shmkey2 = ftok("./broker.c", 2);
+ *        int shm2 = shmget (shmkey2, sizeof(struct topic_msg_list *) * __MAX_TOPIC_COUNT__, 
+ *                        IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+ *        if (shm2 == -1) {
+ *                perror("Error with shmget()");
+ *                exit(0);
+ *        }
+ *
+ *        MAIN_TOPIC_LIST = shmat(shm2, NULL, 0);
+ *        if (MAIN_TOPIC_LIST == (void *) -1) {
+ *                perror("Error with shmat()");
+ *                exit(0);
+ *        }
+ */
+
+	// Shared memory for
+	int shmkey2 = ftok("./broker.c", 2);
+	int shm2 = shmget (shmkey2, sizeof(int) * __MAX_TOPIC_COUNT__, 
+			IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	if (shm2 == -1) {
+		perror("Error with shmget()");
+		exit(0);
+	}
+
+	topic = (int *) shmat(shm2, NULL, 0);
+	if (topic == (void *) -1) {
+		perror("Error with shmat()");
+		exit(0);
+	}
+
+
+	*curr_topic_count = 0;
+
 	int serv_sock = serv_side_setup (self_port); 
 
 	while (true) {
@@ -108,6 +162,8 @@ int main (int argc, char *argv[]) {
 					}
 					printf("topic: %s\n", topic);
 					handle_topic_create (clnt_sock, topic);
+					/*printf("created: %s\n", MAIN_TOPIC_LIST[*curr_topic_count-1]->topic);*/
+					printf("created %d: %d\n", *curr_topic_count - 1, topic[*curr_topic_count-1]);
 					close(clnt_sock);
 				}
 				else if (cmd_code[0] == '1') {

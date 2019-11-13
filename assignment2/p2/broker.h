@@ -13,9 +13,13 @@ struct broker {
 extern struct broker BROKERS[3];
 
 struct topic_msg_list {
-	char *topic;
-	char *msgs[__MAX_MSG_COUNT__];
+	/*
+	 *char topic[__MAX_TOPIC_SIZE__];
+	 *char *msgs[__MAX_MSG_COUNT__];
+	 */
+	int topic;
 };
 
-extern struct topic_msg_list MAIN_TOPIC_LIST[__MAX_TOPIC_COUNT__];
-extern int curr_topic_count;
+extern struct topic_msg_list **MAIN_TOPIC_LIST;
+extern int *curr_topic_count;
+extern int **topic;
