@@ -13,31 +13,35 @@
 #include "tcp_helpers.h"
 #include "broker.h"
 #include "broker_sub_methods.h"
+#include "broker_pub_methods.h"
+#include "common_utils.h"
 
 // Lock sem before it
-void update_shared_memory(struct shared_mem_structure *addr, const char *name) {
-	int count = addr->n;
-	for(int i = 0; i < count; ++i) {
-		if(strcmp((addr->lt[i]).topic_name, name) == 0) return;
-	}
-	strcpy((addr->lt[count]).topic_name, name);
-	(addr->lt[count]).no_messages = 0;
-	addr->n = count+1;
-	return;
-}
-
-void add_message(struct shared_mem_structure *addr, const char *name, const char *msg) {
-	
-	int count = addr->n;
-	for(int i = 0; i < count; ++i) {
-		if(strcmp((addr->lt[i]).topic_name, name) == 0) {
-			strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
-			(addr->lt[i]).no_messages += 1;
-			return;
-		}
-	}
-}
-
+/*
+ *void update_shared_memory(struct shared_mem_structure *addr, const char *name) {
+ *        int count = addr->n;
+ *        for(int i = 0; i < count; ++i) {
+ *                if(strcmp((addr->lt[i]).topic_name, name) == 0) return;
+ *        }
+ *        strcpy((addr->lt[count]).topic_name, name);
+ *        (addr->lt[count]).no_messages = 0;
+ *        addr->n = count+1;
+ *        return;
+ *}
+ *
+ *void add_message(struct shared_mem_structure *addr, const char *name, const char *msg) {
+ *        
+ *        int count = addr->n;
+ *        for(int i = 0; i < count; ++i) {
+ *                if(strcmp((addr->lt[i]).topic_name, name) == 0) {
+ *                        strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
+ *                        (addr->lt[i]).no_messages += 1;
+ *                        return;
+ *                }
+ *        }
+ *}
+ *
+ */
 // Unlock sem before it
 
 struct broker BROKERS[3] = {
@@ -45,10 +49,6 @@ struct broker BROKERS[3] = {
 	{"127.0.0.1", 5000, "127.0.0.1", 4000, "127.0.0.1", 6000},
 	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
 };
-
-int *curr_topic_count;
-struct topic_msg_list **MAIN_TOPIC_LIST;
-int *topic;
 
 int main (int argc, char *argv[]) {
 	if (argc != 2){
@@ -68,34 +68,6 @@ int main (int argc, char *argv[]) {
 	char *n2_ip = BROKERS[my_index].n2_ip;
 	int n2_port = BROKERS[my_index].n2_port;
 	
-	// Shared memory for curr_topic_count creation
-	int shmkey1 = ftok("./broker.c", 1);
-	int shm1 = shmget (shmkey1, sizeof(int), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	if (shm1 == -1) {
-		perror("Error with shmget()");
-		exit(0);
-	}
-
-	curr_topic_count = shmat(shm1, NULL, 0);
-	if (curr_topic_count == (void *) -1) {
-		perror("Error with shmat()");
-		exit(0);
-	}
-
-	// Shared memory for
-	int shmkey2 = ftok("./broker.h", 2);
-	int shm2 = shmget (shmkey2, sizeof(int) * __MAX_TOPIC_COUNT__, IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	if (shm2 == -1) {
-		perror("Error with shmget()");
-		exit(0);
-	}
-
-	topic = (int *) shmat(shm2, NULL, 0);
-	if (topic == (void *) -1) {
-		perror("Error with shmat()");
-		exit(0);
-	}
-
 	int shmkey3 = ftok("./broker.c", 3);
 	printf("%ld\n", sizeof(struct shared_mem_structure));
 	int shm3 = shmget (shmkey3, sizeof(struct shared_mem_structure), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
@@ -184,17 +156,24 @@ int main (int argc, char *argv[]) {
 			else if (strcmp(conn_class, __SUB_CLASS__) == 0) {
 				printf("subscriber connection\n");
 				char cmd_code[1];
+				printf("here1\n");
 				if (read(clnt_sock, cmd_code, 1) != 1) {
 					printf("Incorrect command code\n");
 					printf("Closing connection...");
 					close(clnt_sock);
 					exit(0);
 				}
+				printf("here2\n");
 				if (cmd_code[0] == '0') {
 					printf("subscriber subscribe\n");
 				}
 				else if (cmd_code[0] == '1') {
 					printf("subscriber read\n");
+
+					char topic[__MAX_TOPIC_SIZE__];
+					read_rem_msg(clnt_sock, topic, __MAX_MSG_SIZE__);
+					printf("retrieve: %s\n", topic);
+					handle_topic_read(clnt_sock, topic, sh_mem);
 				}
 				else if (cmd_code[0] == '2') {
 					printf("subscriber read all\n");
@@ -215,17 +194,9 @@ int main (int argc, char *argv[]) {
 					printf("publisher create\n");
 
 					char topic[__MAX_TOPIC_SIZE__];
-					int nt = read(clnt_sock, topic, __MAX_TOPIC_SIZE__);
-					topic[nt] = 0;
-					if (nt <= 0) {
-						printf("Error reading topic from publisher\n");
-						printf("Closing Connection...");
-						close(clnt_sock);
-						exit(0);
-					}
-					printf("topic: %s\n", topic);
+					read_rem_msg(clnt_sock, topic, __MAX_TOPIC_SIZE__);
+					
 					handle_topic_create (clnt_sock, topic, sh_mem);
-					/*printf("created: %s\n", MAIN_TOPIC_LIST[*curr_topic_count-1]->topic);*/
 					printf("created %d: %d\n", sh_mem->n, topic[sh_mem->n - 1]);
 					close(clnt_sock);
 				}
@@ -233,24 +204,14 @@ int main (int argc, char *argv[]) {
 					printf("publisher send\n");
 
 					char topic_n_msg[__MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__];
-					int nm = read(clnt_sock, topic_n_msg, __MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__);
-					topic_n_msg[nm] = 0;
-					if (nm <= 0) {
-						printf("Error reading message from publisher\n");
-						printf("Closing Connection...");
-						close(clnt_sock);
-						exit(0);
-					}
-					printf("%d here: %s\n", nm, topic_n_msg);
+					read_rem_msg(clnt_sock, topic_n_msg, __MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__);
 
 					char *topic_n_msg_copy = strdup(topic_n_msg);
 					char *tok = strtok(topic_n_msg, "#");
 					char *topic = strdup(tok);
 					char *msg = strchr(topic_n_msg_copy, '#') + 1;
 					handle_msg_recv(clnt_sock, topic, msg, sh_mem);
-				}
-				else if (cmd_code[0] == '2') {
-					printf("publisher send file\n");
+					close(clnt_sock);
 				}
 			} 
 			else {

@@ -10,12 +10,14 @@ char *subscribed_topics[__MAX_TOPIC_COUNT__];
 char subscribed_topics_len = 0;
 
 int main (int argc, char *argv[]) {
-	if (argc != 2) {
+	if (argc != 3) {
 		printf("Incorrect number of arguments.\n");
-		printf("Usage: ./a.out <broker_ip>\n");
+		printf("Usage: ./sub.out <broker_ip> <broker_port>\n");
+		exit(0);
 	}
 	char *broker_ip = argv[1];
-	
+	int broker_port = atoi(argv[2]);
+
 	printf("Commands:\n");
 	printf("-> %s <topic>\n", __SUB_CMD__);
 	printf("-> %s <topic>\n", __SUB_RET_CMD__);
@@ -33,6 +35,6 @@ int main (int argc, char *argv[]) {
 		printf("%s\n", cmd_buf);
 		
 		/*int broker_sock_fd = clnt_side_setup(broker_ip, __DFL_PORT__);*/
-		run_cmd (cmd_buf);
+		run_cmd (cmd_buf, broker_ip, broker_port);
 	}
 }
