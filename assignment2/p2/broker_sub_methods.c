@@ -37,7 +37,23 @@ void handle_topic_create (int fd, char *topic, struct shared_mem_structure *addr
 	write(fd, reply, sizeof(char) * (strlen(reply) + 1));
 }
 
-void handle_msg_recv (int clnt_sock, char *topic, char *msg) {
+void handle_msg_recv (int fd, char *topic, char *msg, struct shared_mem_structure *addr) {
 	printf("topic: %s\nmsg: %s\n", topic, msg);
+	char *reply;
+	int count = addr->n;
+	int i;
+	for(i = 0; i < count; ++i) {
+		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
+			strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
+			(addr->lt[i]).no_messages += 1;
+			reply = "Message sent!";
+			break;
+		}
+	}
 
+	if (i == count) {
+		reply = "Topic not found!";
+	}
+
+	write(fd, reply, sizeof(char) * (strlen(reply) + 1));
 }

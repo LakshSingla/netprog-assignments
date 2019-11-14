@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "constants.h"
 #include "tcp_helpers.h"
+#include "publisher_run_cmd.h"
 
 void msg_prefix (char *msg, char *class, char *code, char *content) {
 	strcat(msg, class);
@@ -40,7 +42,6 @@ void create_topic (char *topic, int con_fd) {
 	msg[3] = 0;
 
 	send_and_wait (con_fd, msg, msg_size);
-	close(con_fd);
 }
 
 void send_msg (char *topic, char *msg_send, int con_fd) {
@@ -55,9 +56,21 @@ void send_msg (char *topic, char *msg_send, int con_fd) {
 	msg[3] = 0;
 
 	send_and_wait (con_fd, msg, msg_size);
-	close(con_fd);
 }
 
-void send_file (char *topic, char *filename) {
+void send_file (char *topic, char *filename, char *broker_ip, int broker_port) {
+	int fd = open(filename, O_RDONLY);
 
+	char buf[__MAX_MSG_SIZE__ + 1];
+	int n;
+	while ((n = read(fd, buf, __MAX_MSG_SIZE__)) != 0) {
+		buf[n] = 0;
+		char cmd[__MAX_CMD_SIZE__];
+		memset(cmd, 0, __MAX_CMD_SIZE__);
+		strcat(cmd, "send ");
+		strcat(cmd, topic);
+		strcat(cmd, " ");
+		strcat(cmd, buf);
+		run_cmd(cmd, broker_ip, broker_port);
+	}
 }

@@ -1,5 +1,4 @@
 #define __PROMPT__ 			"> "
-#define __MAX_CMD_SIZE__		1024
 #define __DFL_PORT1__			5000
 #define __DFL_PORT2__			6000
 #define __DFL_PORT3__			7000
@@ -10,6 +9,7 @@
 #define __MAX_TOPIC_SIZE__		50
 #define __MAX_TOPIC_COUNT__		50
 #define __MAX_RESPONSE_SIZE__		50
+#define __MAX_CMD_SIZE__		__MAX_MSG_SIZE__ + __MAX_TOPIC_SIZE__ + 10
 
 
 #define __SUB_CMD__			"subscribe"
