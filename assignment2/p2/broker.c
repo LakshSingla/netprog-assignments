@@ -50,6 +50,12 @@ struct broker BROKERS[3] = {
 	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
 };
 
+/*
+ *void del_msg () {
+ *        printf("here: %s\n", sh_mem->lt[count].msg_array)
+ *}
+ */
+
 int main (int argc, char *argv[]) {
 	if (argc != 2){
 		printf("Incorrect number of arguments.\n");
@@ -122,6 +128,7 @@ int main (int argc, char *argv[]) {
 
 	*curr_topic_count = 0;
 */
+	/*signal(SIGALRM, del_msg);*/
 	int serv_sock = serv_side_setup (self_port); 
 
 	while (true) {
@@ -133,6 +140,7 @@ int main (int argc, char *argv[]) {
 			perror("Error in accept()");
 			exit(0);
 		}
+		
 
 		int ch = fork();
 
@@ -196,8 +204,8 @@ int main (int argc, char *argv[]) {
 					char topic[__MAX_TOPIC_SIZE__];
 					read_rem_msg(clnt_sock, topic, __MAX_TOPIC_SIZE__);
 					
+					printf("topic: %s\n", topic);
 					handle_topic_create (clnt_sock, topic, sh_mem);
-					printf("created %d: %d\n", sh_mem->n, topic[sh_mem->n - 1]);
 					close(clnt_sock);
 				}
 				else if (cmd_code[0] == '1') {
@@ -217,6 +225,7 @@ int main (int argc, char *argv[]) {
 			else {
 				printf("%s\n", conn_class);
 			}
+			exit(1);
 		}
 		else if (ch > 0) {
 

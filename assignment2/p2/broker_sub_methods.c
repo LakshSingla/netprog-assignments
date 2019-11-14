@@ -12,7 +12,7 @@ void handle_topic_read (int fd, char *topic, struct shared_mem_structure *addr) 
 		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
 			// topic present
 			if (addr->lt[i].no_messages > 0) {
-				write(fd, addr->lt[i].msg_arr[0], strlen(addr->lt[i].msg_arr[0]) * sizeof(char));
+				write(fd, addr->lt[i].msg_arr[0].msg, strlen(addr->lt[i].msg_arr[0].msg) * sizeof(char));
 				return;
 			}
 			else {

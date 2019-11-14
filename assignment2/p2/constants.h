@@ -10,6 +10,7 @@
 #define __MAX_TOPIC_COUNT__		50
 #define __MAX_RESPONSE_SIZE__		__MAX_MSG_SIZE__
 #define __MAX_CMD_SIZE__		__MAX_MSG_SIZE__ + __MAX_TOPIC_SIZE__ + 10
+#define __MSG_TIME_LIMIT__		10 // seconds after which msg expires in broker
 
 
 #define __SUB_CMD__			"subscribe"

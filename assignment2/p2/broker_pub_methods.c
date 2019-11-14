@@ -44,7 +44,7 @@ void handle_msg_recv (int fd, char *topic, char *msg, struct shared_mem_structur
 	int i;
 	for(i = 0; i < count; ++i) {
 		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
-			strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
+			strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages].msg, msg);
 			(addr->lt[i]).no_messages += 1;
 			reply = "Message sent!";
 			break;
@@ -54,6 +54,22 @@ void handle_msg_recv (int fd, char *topic, char *msg, struct shared_mem_structur
 	if (i == count) {
 		reply = "Topic not found!";
 	}
-
 	write(fd, reply, sizeof(char) * (strlen(reply) + 1));
+	
+	if (i != count) {
+		sleep(__MSG_TIME_LIMIT__);
+		count = addr->n;
+		for(i = 0; i < count; ++i) {
+			if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
+				int msg_count = addr->lt[i].no_messages;
+				for (int j = 0; j < msg_count - 1; j++) {
+					addr->lt[i].msg_arr[j] = addr->lt[i].msg_arr[j+1];
+				}
+
+				(addr->lt[i]).no_messages -= 1;
+				break;
+			}
+		}
+		printf("Deleted!\n");
+	}
 }
