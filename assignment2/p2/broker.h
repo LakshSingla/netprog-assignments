@@ -22,9 +22,11 @@ struct msg_struct {
 
 struct l_topic {
 	int no_messages;
+	int max_msg_id;
 	char topic_name[__MAX_TOPIC_SIZE__];
-	struct msg_struct msg_arr[__MAX_TOPIC_COUNT__]; //max no messages per topic * topic content
-	//int msg_to_del[__MAX_MSG_COUNT__];
+	struct msg_struct msg_arr[__MAX_MSG_COUNT__]; //max no messages per topic * topic content
+	int get_index;
+	int set_index;
 };
 
 struct shared_mem_structure {

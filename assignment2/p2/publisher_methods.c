@@ -15,7 +15,8 @@ void create_topic (char *topic, int con_fd) {
 	msg_prefix (msg, __PUB_CLASS__, __PUB_CREATE_CODE__, topic);
 	msg[3] = 0;
 
-	send_and_wait (con_fd, msg, msg_size);
+	char *resp = send_and_wait (con_fd, msg, msg_size);
+	printf("\n%s\n", resp);
 }
 
 void send_msg (char *topic, char *msg_send, int con_fd) {
@@ -29,7 +30,8 @@ void send_msg (char *topic, char *msg_send, int con_fd) {
 	strcat(msg, msg_send);
 	msg[3] = 0;
 
-	send_and_wait (con_fd, msg, msg_size);
+	char *resp = send_and_wait (con_fd, msg, msg_size);
+	printf("\n%s\n", resp);
 }
 
 void send_file (char *topic, char *filename, char *broker_ip, int broker_port) {

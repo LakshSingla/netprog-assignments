@@ -36,7 +36,19 @@ void ret_topic (char *topic, int con_fd) {
 		msg_prefix (msg, __SUB_CLASS__, __SUB_RET_CODE__, topic);
 		msg[3] = 0;
 
-		send_and_wait (con_fd, msg, msg_size);
+		char *resp = send_and_wait (con_fd, msg, msg_size);
+
+		char *msg_content = strchr(resp, '#');
+		if (msg_content != NULL) {
+			char *resp_copy = strdup(resp);
+			char *msg_id = strtok(resp_copy, "#");
+			msg_content += 1;
+			printf("Message id: %s\n", msg_id);
+			printf("Message content: %s\n", msg_content);
+		}
+		else {
+			printf("\n%s\n", resp);
+		}
 	}
 }
 

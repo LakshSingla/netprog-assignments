@@ -12,19 +12,26 @@ void handle_topic_read (int fd, char *topic, struct shared_mem_structure *addr) 
 		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
 			// topic present
 			if (addr->lt[i].no_messages > 0) {
-				write(fd, addr->lt[i].msg_arr[0].msg, strlen(addr->lt[i].msg_arr[0].msg) * sizeof(char));
+				struct msg_struct ret_msg = (addr->lt[i]).msg_arr[(addr->lt[i]).get_index];
+				printf("sending: %s\n", ret_msg.msg);
+				// need to send msg with id
+				char msg_with_id[__MAX_RESPONSE_SIZE__];
+				sprintf(msg_with_id, "%d#%s", ret_msg.id, ret_msg.msg);
+				write(fd, msg_with_id, strlen(msg_with_id) * sizeof(char));
 				return;
 			}
 			else {
 				// communicate to other brokers to get messages	
-				
+				/*query_neighbour(char *)*/
+				reply = "No messages found for the topic!";	
 			}
 			break;
 		}
 	}
 	if (i == count) {
 		// topic not present
-
+		reply = "Topic not found!";	
 	}
 
+	write(fd, reply, (strlen(reply) + 1) * sizeof(char));
 }
