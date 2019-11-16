@@ -13,37 +13,35 @@
 #include "tcp_helpers.h"
 #include "broker.h"
 #include "broker_sub_methods.h"
-
-/*struct shared_mem_structure {
-	int n;
-	struct l_topic lt[100];
-};*/
-
+#include "broker_pub_methods.h"
+#include "common_utils.h"
 
 // Lock sem before it
-void update_shared_memory(struct shared_mem_structure *addr, const char *name) {
-	int count = addr->n;
-	for(int i = 0; i < count; ++i) {
-		if(strcmp((addr->lt[i]).topic_name, name) == 0) return;
-	}
-	strcpy((addr->lt[count]).topic_name, name);
-	(addr->lt[count]).no_messages = 0;
-	addr->n = count+1;
-	return;
-}
-
-void add_message(struct shared_mem_structure *addr, const char *name, const char *msg) {
-	
-	int count = addr->n;
-	for(int i = 0; i < count; ++i) {
-		if(strcmp((addr->lt[i]).topic_name, name) == 0) {
-			strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
-			(addr->lt[i]).no_messages += 1;
-			return;
-		}
-	}
-}
-
+/*
+ *void update_shared_memory(struct shared_mem_structure *addr, const char *name) {
+ *        int count = addr->n;
+ *        for(int i = 0; i < count; ++i) {
+ *                if(strcmp((addr->lt[i]).topic_name, name) == 0) return;
+ *        }
+ *        strcpy((addr->lt[count]).topic_name, name);
+ *        (addr->lt[count]).no_messages = 0;
+ *        addr->n = count+1;
+ *        return;
+ *}
+ *
+ *void add_message(struct shared_mem_structure *addr, const char *name, const char *msg) {
+ *        
+ *        int count = addr->n;
+ *        for(int i = 0; i < count; ++i) {
+ *                if(strcmp((addr->lt[i]).topic_name, name) == 0) {
+ *                        strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
+ *                        (addr->lt[i]).no_messages += 1;
+ *                        return;
+ *                }
+ *        }
+ *}
+ *
+ */
 // Unlock sem before it
 
 struct broker BROKERS[3] = {
@@ -52,9 +50,11 @@ struct broker BROKERS[3] = {
 	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
 };
 
-int *curr_topic_count;
-struct topic_msg_list **MAIN_TOPIC_LIST;
-int *topic;
+/*
+ *void del_msg () {
+ *        printf("here: %s\n", sh_mem->lt[count].msg_array)
+ *}
+ */
 
 int main (int argc, char *argv[]) {
 	if (argc != 2){
@@ -74,106 +74,61 @@ int main (int argc, char *argv[]) {
 	char *n2_ip = BROKERS[my_index].n2_ip;
 	int n2_port = BROKERS[my_index].n2_port;
 	
-	// Shared memory for curr_topic_count creation
-	int shmkey1 = ftok("./broker.c", 1);
-	int shm1 = shmget (shmkey1, sizeof(int), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	if (shm1 == -1) {
-		perror("Error with shmget()");
-		exit(0);
-	}
-
-	curr_topic_count = shmat(shm1, NULL, 0);
-	if (curr_topic_count == (void *) -1) {
-		perror("Error with shmat()");
-		exit(0);
-	}
-
-	// Shared memory for MAIN_TOPIC_LIST
-/*
- *        int shmkey2 = ftok("./broker.c", 2);
- *        int shm2 = shmget (shmkey2, sizeof(struct topic_msg_list *) * __MAX_TOPIC_COUNT__, 
- *                        IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
- *        if (shm2 == -1) {
- *                perror("Error with shmget()");
- *                exit(0);
- *        }
- *
- *        MAIN_TOPIC_LIST = shmat(shm2, NULL, 0);
- *        if (MAIN_TOPIC_LIST == (void *) -1) {
- *                perror("Error with shmat()");
- *                exit(0);
- *        }
- */
-
-	// Shared memory for
-	int shmkey2 = ftok("./broker.c", 2);
-	int shm2 = shmget (shmkey2, sizeof(int) * __MAX_TOPIC_COUNT__, 
-			IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	if (shm2 == -1) {
-		perror("Error with shmget()");
-		exit(0);
-	}
-
-	topic = (int *) shmat(shm2, NULL, 0);
-	if (topic == (void *) -1) {
-		perror("Error with shmat()");
-		exit(0);
-	}
-
 	int shmkey3 = ftok("./broker.c", 3);
-	printf("%d\n", sizeof(struct shared_mem_structure));
+	printf("%ld\n", sizeof(struct shared_mem_structure));
 	int shm3 = shmget (shmkey3, sizeof(struct shared_mem_structure), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if(shm3 == -1) {
 		perror("Error with shmget()");
 		exit(0);
 	}
 
-	struct shared_mem_structure *l_mem = shmat(shm3, NULL, 0);
-	l_mem->n = 0;
+	struct shared_mem_structure *sh_mem = shmat(shm3, NULL, 0);
+	sh_mem->n = 0;
 
-	printf("%d\n", l_mem->n);
-	if (l_mem == (void *) -1) {
+	printf("%d\n", sh_mem->n);
+	if (sh_mem == (void *) -1) {
 		perror("Error with shmat()");
 		exit(0);
 	}
 
 	/*if(fork() == 0) {
-		update_shared_memory(l_mem, "robin");
+		update_shared_memory(sh_mem, "robin");
 		exit(0);
 	}
 	wait(NULL);
 	if(fork() == 0) {
-		update_shared_memory(l_mem, "robin2");
+		update_shared_memory(sh_mem, "robin2");
 		exit(0);
 	}
 	wait(NULL);
 	if(fork() == 0) {
-		update_shared_memory(l_mem, "robin");
+		update_shared_memory(sh_mem, "robin");
 		exit(0);
 	}
 	wait(NULL);	
 
-	add_message(l_mem, "robin", "msg1");
-	add_message(l_mem, "robin2", "msg1");
-	add_message(l_mem, "robin", "msg1");
-	add_message(l_mem, "robin", "msg2");
+	add_message(sh_mem, "robin", "msg1");
+	add_message(sh_mem, "robin2", "msg1");
+	add_message(sh_mem, "robin", "msg1");
+	add_message(sh_mem, "robin", "msg2");
 	if(fork() == 0) {
-		add_message(l_mem, "robin2", "x");
+		add_message(sh_mem, "robin2", "x");
 		exit(0);
 	}
 
 	wait(NULL);
 
-	printf("%d\n", l_mem->n);
-	for(int i = 0; i < l_mem->n; ++i) {
-		printf("%s\n", (l_mem->lt[i]).topic_name);	
-		for(int j = 0; j < (l_mem->lt[i]).no_messages; ++j) {
-			printf("%s\n", (l_mem->lt[i]).msg_arr[j]);	
+	printf("%d\n", sh_mem->n);
+	for(int i = 0; i < sh_mem->n; ++i) {
+		printf("%s\n", (sh_mem->lt[i]).topic_name);	
+		for(int j = 0; j < (sh_mem->lt[i]).no_messages; ++j) {
+			printf("%s\n", (sh_mem->lt[i]).msg_arr[j]);	
 		}
 	}
 
 	*curr_topic_count = 0;
 */
+	/*signal(SIGALRM, del_msg);*/
 	int serv_sock = serv_side_setup (self_port); 
 
 	while (true) {
@@ -185,6 +140,7 @@ int main (int argc, char *argv[]) {
 			perror("Error in accept()");
 			exit(0);
 		}
+		
 
 		int ch = fork();
 
@@ -208,17 +164,24 @@ int main (int argc, char *argv[]) {
 			else if (strcmp(conn_class, __SUB_CLASS__) == 0) {
 				printf("subscriber connection\n");
 				char cmd_code[1];
+				printf("here1\n");
 				if (read(clnt_sock, cmd_code, 1) != 1) {
 					printf("Incorrect command code\n");
 					printf("Closing connection...");
 					close(clnt_sock);
 					exit(0);
 				}
+				printf("here2\n");
 				if (cmd_code[0] == '0') {
 					printf("subscriber subscribe\n");
 				}
 				else if (cmd_code[0] == '1') {
 					printf("subscriber read\n");
+
+					char topic[__MAX_TOPIC_SIZE__];
+					read_rem_msg(clnt_sock, topic, __MAX_MSG_SIZE__);
+					printf("retrieve: %s\n", topic);
+					handle_topic_read(clnt_sock, topic, sh_mem);
 				}
 				else if (cmd_code[0] == '2') {
 					printf("subscriber read all\n");
@@ -233,33 +196,36 @@ int main (int argc, char *argv[]) {
 					close(clnt_sock);
 					exit(0);
 				}
+
+				
 				if (cmd_code[0] == '0') {
 					printf("publisher create\n");
 
 					char topic[__MAX_TOPIC_SIZE__];
-					int nt = read(clnt_sock, topic, __MAX_TOPIC_SIZE__);
-					if (nt <= 0) {
-						printf("Error reading topic from publisher\n");
-						printf("Closing Connection...");
-						close(clnt_sock);
-						exit(0);
-					}
+					read_rem_msg(clnt_sock, topic, __MAX_TOPIC_SIZE__);
+					
 					printf("topic: %s\n", topic);
-					handle_topic_create (clnt_sock, topic, l_mem);
-					/*printf("created: %s\n", MAIN_TOPIC_LIST[*curr_topic_count-1]->topic);*/
-					printf("created %d: %d\n", l_mem->n, topic[l_mem->n - 1]);
+					handle_topic_create (clnt_sock, topic, sh_mem);
 					close(clnt_sock);
 				}
 				else if (cmd_code[0] == '1') {
 					printf("publisher send\n");
-				}
-				else if (cmd_code[0] == '2') {
-					printf("publisher send file\n");
+
+					char topic_n_msg[__MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__];
+					read_rem_msg(clnt_sock, topic_n_msg, __MAX_TOPIC_SIZE__ + __MAX_MSG_SIZE__);
+
+					char *topic_n_msg_copy = strdup(topic_n_msg);
+					char *tok = strtok(topic_n_msg, "#");
+					char *topic = strdup(tok);
+					char *msg = strchr(topic_n_msg_copy, '#') + 1;
+					handle_msg_recv(clnt_sock, topic, msg, sh_mem);
+					close(clnt_sock);
 				}
 			} 
 			else {
 				printf("%s\n", conn_class);
 			}
+			exit(1);
 		}
 		else if (ch > 0) {
 

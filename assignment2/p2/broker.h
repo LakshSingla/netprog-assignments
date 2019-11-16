@@ -15,27 +15,25 @@ struct broker {
 
 extern struct broker BROKERS[3];
 
+struct msg_struct {
+	int id;
+	char msg[__MAX_MSG_SIZE__];
+};
+
 struct l_topic {
 	int no_messages;
-	char topic_name[20];
-	char msg_arr[100][512]; //max no messages per topic * topic content
+	int max_msg_id;
+	char topic_name[__MAX_TOPIC_SIZE__];
+	struct msg_struct msg_arr[__MAX_MSG_COUNT__]; //max no messages per topic * topic content
+	int get_index;
+	int set_index;
 };
 
 struct shared_mem_structure {
 	int n;
-	struct l_topic lt[100]; //max no of topics
+	struct l_topic lt[__MAX_TOPIC_COUNT__]; //max no of topics
 };
 
-struct topic_msg_list {
-	/*
-	 *char topic[__MAX_TOPIC_SIZE__];
-	 *char *msgs[__MAX_MSG_COUNT__];
-	 */
-	int topic;
-};
-
-extern struct topic_msg_list **MAIN_TOPIC_LIST;
-extern int *curr_topic_count;
-extern int *topic;
+extern struct shared_mem_structure *sh_mem;
 
 #endif

@@ -1,40 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
+#include <unistd.h>
 #include "broker.h"
-#include "constants.h"
 
-int *curr_topic_count;
-struct topic_msg_list **MAIN_TOPIC_LIST;
-int *topic;
-
-void handle_topic_create (int fd, char *topic, struct shared_mem_structure *addr) {
-	char *reply;
+void handle_topic_read (int fd, char *topic, struct shared_mem_structure *addr) {
 	int count = addr->n;
 	int i;
+	char *reply;
 	for(i = 0; i < count; ++i) {
 		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
-			reply = "Topic already exists!";
+			// topic present
+			if (addr->lt[i].no_messages > 0) {
+				struct msg_struct ret_msg = (addr->lt[i]).msg_arr[(addr->lt[i]).get_index];
+				printf("sending: %s\n", ret_msg.msg);
+				// need to send msg with id
+				char msg_with_id[__MAX_RESPONSE_SIZE__];
+				sprintf(msg_with_id, "%d#%s", ret_msg.id, ret_msg.msg);
+				write(fd, msg_with_id, strlen(msg_with_id) * sizeof(char));
+				return;
+			}
+			else {
+				// communicate to other brokers to get messages	
+				/*query_neighbour(char *)*/
+				reply = "No messages found for the topic!";	
+			}
 			break;
 		}
 	}
-
 	if (i == count) {
-		if (count == __MAX_TOPIC_COUNT__) {
-			reply = "Max topic count reached!";
-		}
-		else {
-			strcpy((addr->lt[count]).topic_name, topic);
-			(addr->lt[count]).no_messages = 0;
-			addr->n = count+1;
-			reply = "Topic successfully created!";
-		}
+		// topic not present
+		reply = "Topic not found!";	
 	}
 
-	write(fd, reply, sizeof(char) * (strlen(reply) + 1));
+	write(fd, reply, (strlen(reply) + 1) * sizeof(char));
 }
-
-	

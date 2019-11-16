@@ -1,5 +1,4 @@
 #define __PROMPT__ 			"> "
-#define __MAX_CMD_SIZE__		1024
 #define __DFL_PORT1__			5000
 #define __DFL_PORT2__			6000
 #define __DFL_PORT3__			7000
@@ -7,9 +6,11 @@
 #define __MAX_CONFIG_SIZE__		50
 #define __MAX_MSG_SIZE__		512
 #define __MAX_MSG_COUNT__		100
-#define __MAX_TOPIC_SIZE__		50
+#define __MAX_TOPIC_SIZE__		20
 #define __MAX_TOPIC_COUNT__		50
-#define __MAX_RESPONSE_SIZE__		50
+#define __MAX_RESPONSE_SIZE__		__MAX_MSG_SIZE__
+#define __MAX_CMD_SIZE__		__MAX_MSG_SIZE__ + __MAX_TOPIC_SIZE__ + 10
+#define __MSG_TIME_LIMIT__		10 // seconds after which msg expires in broker
 
 
 #define __SUB_CMD__			"subscribe"
@@ -24,7 +25,6 @@
 #define __PUB_SEND_CMD__		"send"
 #define __PUB_SEND_CODE__		"1"
 #define __PUB_SENDFILE_CMD__		"send-file"
-#define __PUB_SENDFILE_CODE__		"2"
 
 #define __BROK_CLASS__			"BRO"
 #define __SUB_CLASS__			"SUB"
