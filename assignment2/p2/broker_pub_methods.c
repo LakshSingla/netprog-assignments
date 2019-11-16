@@ -49,6 +49,7 @@ void handle_msg_recv (int fd, char *topic, char *msg, struct shared_mem_structur
 		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
 			if ((addr->lt[i]).no_messages == __MAX_MSG_COUNT__) {
 				// msg_arr full
+				reply = "Message limit reached!";
 			}
 			else {
 				strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).set_index].msg, msg);

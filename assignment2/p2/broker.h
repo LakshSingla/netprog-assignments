@@ -7,10 +7,10 @@
 struct broker {
 	char ip[INET_ADDRSTRLEN];
 	int port;
-	char n1_ip[INET_ADDRSTRLEN];
-	int n1_port;
-	char n2_ip[INET_ADDRSTRLEN];
-	int n2_port;
+	char left_ip[INET_ADDRSTRLEN];
+	int left_port;
+	char right_ip[INET_ADDRSTRLEN];
+	int right_port;
 };
 
 extern struct broker BROKERS[3];
@@ -35,5 +35,11 @@ struct shared_mem_structure {
 };
 
 extern struct shared_mem_structure *sh_mem;
+extern char *self_ip;
+extern int self_port;
+extern char *left_ip;
+extern int left_port;
+extern char *right_ip;
+extern int right_port;
 
 #endif

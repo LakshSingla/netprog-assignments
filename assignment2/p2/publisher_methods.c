@@ -43,10 +43,7 @@ void send_file (char *topic, char *filename, char *broker_ip, int broker_port) {
 		buf[n] = 0;
 		char cmd[__MAX_CMD_SIZE__];
 		memset(cmd, 0, __MAX_CMD_SIZE__);
-		strcat(cmd, "send ");
-		strcat(cmd, topic);
-		strcat(cmd, " ");
-		strcat(cmd, buf);
+		sprintf(cmd, "send %s %s", topic, buf);
 		run_cmd(cmd, broker_ip, broker_port);
 	}
 }

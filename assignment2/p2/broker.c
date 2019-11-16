@@ -9,11 +9,13 @@
 #include <netdb.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "constants.h"
 #include "tcp_helpers.h"
 #include "broker.h"
 #include "broker_sub_methods.h"
 #include "broker_pub_methods.h"
+#include "broker_methods.h"
 #include "common_utils.h"
 
 // Lock sem before it
@@ -46,9 +48,19 @@
 
 struct broker BROKERS[3] = {
 	{"127.0.0.1", 4000, "127.0.0.1", 5000, "127.0.0.1", 6000},
-	{"127.0.0.1", 5000, "127.0.0.1", 4000, "127.0.0.1", 6000},
-	{"127.0.0.1", 6000, "127.0.0.1", 5000, "127.0.0.1", 4000}
+	{"127.0.0.1", 5000, "127.0.0.1", 6000, "127.0.0.1", 5000},
+	{"127.0.0.1", 6000, "127.0.0.1", 4000, "127.0.0.1", 5000}
 };
+
+char *self_ip;
+int self_port;
+
+char *left_ip;
+int left_port;
+
+char *right_ip;
+int right_port;
+	
 
 /*
  *void del_msg () {
@@ -65,17 +77,18 @@ int main (int argc, char *argv[]) {
 	int my_index = atoi(argv[1]);
 
 	// initialize self and neighbouring ips
-	char *self_ip = BROKERS[my_index].ip;
-	int self_port = BROKERS[my_index].port;
+	self_ip = BROKERS[my_index].ip;
+	self_port = BROKERS[my_index].port;
 
-	char *n1_ip = BROKERS[my_index].n1_ip;
-	int n1_port = BROKERS[my_index].n1_port;
+	left_ip = BROKERS[my_index].left_ip;
+	left_port = BROKERS[my_index].left_port;
 
-	char *n2_ip = BROKERS[my_index].n2_ip;
-	int n2_port = BROKERS[my_index].n2_port;
+	right_ip = BROKERS[my_index].right_ip;
+	right_port = BROKERS[my_index].right_port;
 	
-	int shmkey3 = ftok("./broker.c", 3);
-	printf("%ld\n", sizeof(struct shared_mem_structure));
+	srand(time(NULL));
+	int shmkey3 = ftok("./broker.c", rand() * getpid());
+	printf("%d %ld\n", shmkey3, sizeof(struct shared_mem_structure));
 	int shm3 = shmget (shmkey3, sizeof(struct shared_mem_structure), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if(shm3 == -1) {
 		perror("Error with shmget()");
@@ -160,6 +173,12 @@ int main (int argc, char *argv[]) {
 			printf("here: %s\n", conn_class);
 			if (strcmp(conn_class, __BROK_CLASS__) == 0) {
 				printf("broker connection\n");
+
+				char topic[__MAX_TOPIC_SIZE__];
+				read_rem_msg(clnt_sock, topic, __MAX_MSG_SIZE__);
+				handle_brok (clnt_sock, topic, sh_mem);
+				close(clnt_sock);
+				printf("retrieve: %s\n", topic);
 			}
 			else if (strcmp(conn_class, __SUB_CLASS__) == 0) {
 				printf("subscriber connection\n");
@@ -229,6 +248,7 @@ int main (int argc, char *argv[]) {
 		}
 		else if (ch > 0) {
 
+			close(clnt_sock);
 		}
 		else {
 			perror("fork() error");
