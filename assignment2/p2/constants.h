@@ -28,6 +28,9 @@
 #define __PUB_SEND_CODE__		"1"
 #define __PUB_SENDFILE_CMD__		"send-file"
 
+#define __BROK_RET_CODE__		"0"
+#define __BROK_TOP_CODE__		"1"
+
 #define __BROK_CLASS__			"BRO"
 #define __SUB_CLASS__			"SUB"
 #define __PUB_CLASS__			"PUB"

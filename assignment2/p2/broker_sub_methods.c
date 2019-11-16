@@ -5,6 +5,9 @@
 #include "broker.h"
 #include "broker_methods.h"
 
+char *self_ip;
+int self_port;
+
 void handle_topic_read (int fd, char *topic, struct shared_mem_structure *addr) {
 	int count = addr->n;
 	int i;
@@ -23,7 +26,7 @@ void handle_topic_read (int fd, char *topic, struct shared_mem_structure *addr) 
 			}
 			else {
 				// communicate to other brokers to get messages	
-				if (query_neighbour(topic, addr) != 0) {
+				if (query_neighbour(topic, self_ip, self_port, addr) != 0) {
 					reply = "No messages found for the topic!";	
 				}
 				else {

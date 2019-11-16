@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "broker.h"
 #include "constants.h"
+#include "broker_methods.h"
 
 int *curr_topic_count;
 struct topic_msg_list **MAIN_TOPIC_LIST;
@@ -34,7 +35,9 @@ void handle_topic_create (int fd, char *topic, struct shared_mem_structure *addr
 			(addr->lt[count]).set_index = 0;
 			addr->n = count+1;
 			reply = "Topic successfully created!";
+			inform_topic(topic);
 		}
+		inform_topic(topic);
 	}
 
 	write(fd, reply, sizeof(char) * (strlen(reply) + 1));

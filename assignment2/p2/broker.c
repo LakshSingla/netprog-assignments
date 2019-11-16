@@ -174,23 +174,37 @@ int main (int argc, char *argv[]) {
 			if (strcmp(conn_class, __BROK_CLASS__) == 0) {
 				printf("broker connection\n");
 
-				char topic[__MAX_TOPIC_SIZE__];
-				read_rem_msg(clnt_sock, topic, __MAX_MSG_SIZE__);
-				handle_brok (clnt_sock, topic, sh_mem);
-				close(clnt_sock);
-				printf("retrieve: %s\n", topic);
-			}
-			else if (strcmp(conn_class, __SUB_CLASS__) == 0) {
-				printf("subscriber connection\n");
 				char cmd_code[1];
-				printf("here1\n");
 				if (read(clnt_sock, cmd_code, 1) != 1) {
 					printf("Incorrect command code\n");
 					printf("Closing connection...");
 					close(clnt_sock);
 					exit(0);
 				}
-				printf("here2\n");
+
+				if (cmd_code[0] == __BROK_RET_CODE__[0]) {
+					char msg[INET_ADDRSTRLEN + 1 + 6 + 1 + __MAX_TOPIC_SIZE__];
+					read_rem_msg(clnt_sock, msg, __MAX_MSG_SIZE__);
+					handle_brok (clnt_sock, msg, sh_mem);
+					close(clnt_sock);
+				}
+				else if (cmd_code[0] == __BROK_TOP_CODE__[0]) {
+					char topic[__MAX_TOPIC_SIZE__];
+					read_rem_msg(clnt_sock, topic, __MAX_MSG_SIZE__);
+					handle_topic_create(clnt_sock, topic, sh_mem);
+					close(clnt_sock);
+				}
+				printf("broker end\n");
+			}
+			else if (strcmp(conn_class, __SUB_CLASS__) == 0) {
+				printf("subscriber connection\n");
+				char cmd_code[1];
+				if (read(clnt_sock, cmd_code, 1) != 1) {
+					printf("Incorrect command code\n");
+					printf("Closing connection...");
+					close(clnt_sock);
+					exit(0);
+				}
 				if (cmd_code[0] == '0') {
 					printf("subscriber subscribe\n");
 				}
