@@ -11,6 +11,9 @@
 #include "constants.h"
 #include "tcp_helpers.h"
 
+char *working_dir[__MAX_PATH_COMPONENTS__] = {NULL};
+int working_len = 0;
+
 int main () {
 	// Server setup
 	int clnt_sock, serv_sock = serv_side_setup(__NAME_SERVER_PORT__);
@@ -66,10 +69,11 @@ int main () {
 		for (int x = 0; x <= maxj; x++) {
 			// check clients
 			int csock = clients[x];
+			if (csock == -1) continue;
+
 			int flags = fcntl(csock, F_GETFL, 0);
 			fcntl(csock, F_SETFL, flags | O_NONBLOCK);
 
-			if (csock == -1) continue;
 
 			if (FD_ISSET(csock, &rset)) {
 				if (clients_status[x] == __INIT_STATUS__) {
