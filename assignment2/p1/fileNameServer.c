@@ -6,6 +6,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #include<errno.h>
+#include<string.h>
 
 #include "constants.h"
 #include "tcp_helpers.h"
@@ -17,10 +18,16 @@ int main () {
 
 	int maxj = -1, maxfd = serv_sock;
 	int clients[FD_SETSIZE];
+	int clients_status[FD_SETSIZE]; // to remember the status of each client
+	char clients_read_buf[__ONE_MB__][FD_SETSIZE]; // to remember how much has been read 
+	char clients_cmd_code[__CMD_CODE_LEN__ + 1][FD_SETSIZE]; // to remember how much has been read 
+
 	fd_set rset, allset;
 
-	for (int i = 0; i < FD_SETSIZE; i++) clients[i] = -1;
-
+	for (int i = 0; i < FD_SETSIZE; i++) {
+		clients[i] = -1;
+		clients_status[i] = -1;
+	}
 	FD_ZERO(&allset);
 	FD_SET(serv_sock, &allset);
 
@@ -45,6 +52,7 @@ int main () {
 				printf("Too many clients. Exiting...\n");
 				exit(0);
 			}
+			clients_status[j] = __INIT_STATUS__;
 
 			FD_SET(clnt_sock, &allset);
 
@@ -64,28 +72,52 @@ int main () {
 			if (csock == -1) continue;
 
 			if (FD_ISSET(csock, &rset)) {
-				int nb;
-				char buf[1024];
-				while (true) {
-					nb = read(csock, buf, 1024);
+				if (clients_status[x] == __INIT_STATUS__) {
+					// read cmd
+					
+					char buf[__MAX_CMD_SIZE__];
+					int nb = read(csock, buf, __MAX_CMD_SIZE__);
 
 					if (nb < 0) {
 						if (errno != EWOULDBLOCK && errno != EAGAIN)
 							perror("Error reading from client");
-						break;
+						continue;
 					}
 					else if (nb == 0) {
 						close(csock);
 						FD_CLR(csock, &allset);
 						clients[x] = 0;
+						clients_status[x] = -1;
 						break;
 					}
 					else {
 						buf[nb] = 0;
-						printf("Received:\n%s\n", buf);
+
+						memset(clients_read_buf[x], __ONE_MB__, 0);
+						strcpy(clients_read_buf[x], buf+2);
+
+						buf[2] = 0;
+						memset(clients_cmd_code[x], __CMD_CODE_LEN__ + 1, 0);
+						strcpy(clients_cmd_code[x], buf);
+
+						clients_status[x] = __CMD_READ__;
 					}
-				}			
+					nready--;
+				}
+				else if (clients_status[x] == __CMD_READ__) {
+					// cmd already read
+					
+					if (strcmp(clients_cmd_code[x],__UPLOAD_CODE__) == 0) {
+						printf("filename: %s\n", clients_read_buf[x]);
+						// TODO: store file in hierarchy
+
+						clients_status[x] = __UPLOADING_FILE__;
+
+						memset(clients_read_buf[x], __ONE_MB__, 0);
+					}	
+				}
 			}
+			if (nready <= 0) break;
 		}
 	}
 }

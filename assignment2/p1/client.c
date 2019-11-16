@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "constants.h"
 #include "tcp_helpers.h"
@@ -21,6 +22,46 @@ int main() {
 
 		printf("%s\n", cmd_buf);
 
-		upload_file("bigfile.txt", confd);
+		char *tok = strtok(cmd_buf, " ");
+		
+		char *cmd_name = strdup(tok);
+
+		if (strcmp(cmd_name, __UPLOAD_CMD__) == 0) {
+			// upload cmd
+			tok = strtok(NULL, " ");
+			char *filename = tok;
+			char cmd_send[__MAX_CMD_SIZE__];
+			sprintf(cmd_send, "%s%s", __UPLOAD_CODE__, filename);
+			write(confd, cmd_send, strlen(cmd_send) * sizeof(char));
+			upload_file(filename, confd);
+		}
+		else if (strcmp(cmd_name, __LS_CMD__) == 0) {
+			// ls cmd
+			
+		}
+		else if (strcmp(cmd_name, __CP_CMD__) == 0) {
+			// cp cmd
+			
+		}
+		else if (strcmp(cmd_name, __MV_CMD__) == 0) {
+			// mv cmd
+			
+		}
+		else if (strcmp(cmd_name, __MKDIR_CMD__) == 0) {
+			// mkdir cmd
+			
+		}
+		else if (strcmp(cmd_name, __RM_CMD__) == 0) {
+			// rm cmd
+			
+		}
+		else if (strcmp(cmd_name, __CAT_CMD__) == 0) {
+			// cat cmd
+			
+		}
+		else {
+			printf("Unknown command\nAllowed commands: %s, %s, %s, %s, %s, %s, %s\n", __UPLOAD_CMD__, __LS_CMD__, __CP_CMD__, __MV_CMD__, __MKDIR_CMD__, __RM_CMD__, __CAT_CMD__);
+		}
+
 	}
 }

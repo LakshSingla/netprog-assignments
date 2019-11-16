@@ -57,7 +57,7 @@ int clnt_side_setup (char *serv_ip, int serv_port) {
 
 	int connect_res = connect(con_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 	if(connect_res == -1) {
-		printf("Error in connecting to client. Exiting...\n");
+		printf("Error in connecting to server. Exiting...\n");
 		exit(0);
 	}
 
