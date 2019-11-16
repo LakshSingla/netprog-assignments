@@ -8,6 +8,7 @@
 
 char *subscribed_topics[__MAX_TOPIC_COUNT__];
 char subscribed_topics_len = 0;
+int last_msg_id = 0;
 
 int main (int argc, char *argv[]) {
 	if (argc != 3) {

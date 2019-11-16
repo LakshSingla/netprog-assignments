@@ -1,0 +1,1 @@
+- All brokers need to be started before publishers and subscribers.

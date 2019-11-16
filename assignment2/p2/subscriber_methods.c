@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "constants.h"
@@ -30,10 +31,12 @@ void ret_topic (char *topic, int con_fd) {
 	else {
 		// creating a string of the form-
 		// "SUB" + '\0' + code + topic
-		int msg_size = 4 + 1 + strlen(topic);
+		char id_n_topic[10 + 1 + __MAX_TOPIC_SIZE__];
+		sprintf(id_n_topic, "%d#%s", last_msg_id, topic);
+		int msg_size = 4 + 1 + strlen(id_n_topic);
 		char msg[msg_size];
 		memset(msg, 0, msg_size);
-		msg_prefix (msg, __SUB_CLASS__, __SUB_RET_CODE__, topic);
+		msg_prefix (msg, __SUB_CLASS__, __SUB_RET_CODE__, id_n_topic);
 		msg[3] = 0;
 
 		char *resp = send_and_wait (con_fd, msg, msg_size);
@@ -43,6 +46,7 @@ void ret_topic (char *topic, int con_fd) {
 			char *resp_copy = strdup(resp);
 			char *msg_id = strtok(resp_copy, "#");
 			msg_content += 1;
+			last_msg_id = atoi(msg_id);
 			printf("Message id: %s\n", msg_id);
 			printf("Message content: %s\n", msg_content);
 		}

@@ -211,10 +211,15 @@ int main (int argc, char *argv[]) {
 				else if (cmd_code[0] == '1') {
 					printf("subscriber read\n");
 
-					char topic[__MAX_TOPIC_SIZE__];
-					read_rem_msg(clnt_sock, topic, __MAX_MSG_SIZE__);
+					char id_n_topic[__MAX_TOPIC_SIZE__];
+					read_rem_msg(clnt_sock, id_n_topic, __MAX_MSG_SIZE__);
+					char *id_n_topic_copy = strdup(id_n_topic);
+					char *tok = strtok(id_n_topic, "#");
+					int id = atoi(tok);
+					char *topic = strchr(id_n_topic_copy, '#') + 1;
+
 					printf("retrieve: %s\n", topic);
-					handle_topic_read(clnt_sock, topic, sh_mem);
+					handle_topic_read(clnt_sock, topic, id, sh_mem);
 				}
 				else if (cmd_code[0] == '2') {
 					printf("subscriber read all\n");
