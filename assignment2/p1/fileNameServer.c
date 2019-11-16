@@ -1,14 +1,17 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
-#include<stdbool.h>
-#include<sys/select.h>
-#include<arpa/inet.h>
-#include<fcntl.h>
-#include<errno.h>
+#include	<stdio.h>
+#include	<stdlib.h>
+#include	<unistd.h>
+#include	<stdbool.h>
+#include	<sys/select.h>
+#include	<arpa/inet.h>
+#include	<fcntl.h>
+#include	<errno.h>
 
 #include "constants.h"
 #include "tcp_helpers.h"
+
+char *working_dir[__MAX_PATH_COMPONENTS__] = {NULL};
+int working_len = 0;
 
 int main () {
 	// Server setup
@@ -58,10 +61,11 @@ int main () {
 		for (int x = 0; x <= maxj; x++) {
 			// check clients
 			int csock = clients[x];
+			if (csock == -1) continue;
+
 			int flags = fcntl(csock, F_GETFL, 0);
 			fcntl(csock, F_SETFL, flags | O_NONBLOCK);
 
-			if (csock == -1) continue;
 
 			if (FD_ISSET(csock, &rset)) {
 				int nb;
