@@ -14,9 +14,9 @@ struct file_info {
 
 bool fhm_mkdir(const char*);
 bool fhm_cd(const char*);
-bool fhm_ls(const char*);
 bool fhm_add(const char*, const char*);
 bool fhm_rm(const char*);
+void fhm_ls();
 
 
 char* fhm_constructpath();

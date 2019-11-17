@@ -82,3 +82,15 @@ bool fhm_rm(const char *name) {
 	system(sed_command);	
 	return true;
 }
+
+void fhm_ls() {
+	char *meta_file_name = strcat(fhm_constructpath(), "/");
+	strcat(meta_file_name, __FHM_METAFILE__);
+	FILE *fp = fopen(meta_file_name, "r");
+	if(fp == NULL) {
+		printf("Unexpected error\n");
+		return;
+	}
+	char fileName[__MAX_PATH_LEN__], fileContents[__MAX_PATH_LEN__];
+	while(fscanf(fp, " %s %s", fileName, fileContents) != EOF) printf("%s\t", fileName);
+}
