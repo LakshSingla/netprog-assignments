@@ -67,9 +67,11 @@ bool fhm_cd(const char *path_name) {
 	return true;
 }
 
-bool fhm_add(const char *name, const char *serv_arr) {
+bool fhm_add(const char *name, const char *dir_name, const char *serv_arr) {
 	//printf("%s\n", fhm_constructpath());
 	char *meta_file_name = strcat(fhm_constructpath(), "/");
+	strcat(meta_file_name, dir_name);
+	strcat(meta_file_name, "/");
 	strcat(meta_file_name, __FHM_METAFILE__);
 	//printf("\n%s\n", meta_file_name);
 	FILE *fp = fopen(meta_file_name, "a+");
@@ -83,8 +85,10 @@ bool fhm_add(const char *name, const char *serv_arr) {
 	return true;
 }
 
-bool fhm_rm(const char *name) {
+bool fhm_rm(const char *name, const char *dir_name) {
 	char *meta_file_name = strcat(fhm_constructpath(), "/");
+	strcat(meta_file_name, dir_name);
+	strcat(meta_file_name, "/");
 	strcat(meta_file_name, __FHM_METAFILE__);
 	char sed_command[__MAX_PATH_LEN__ + 20];
 	sprintf(sed_command, "sed -i /\\[%s \\]/ %s", name, meta_file_name);
