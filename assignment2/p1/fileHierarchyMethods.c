@@ -37,7 +37,17 @@ bool fhm_mkdir(const char *path_name) {
 }
 
 bool fhm_cd(const char *path_name) {
-	//printf("%s\n", fhm_constructpath());
+	if(strcmp(path_name, ".") == 0) return true;
+	else if(strcmp(path_name, "..") == 0) {
+		if(working_len == 0) {
+			printf("At the topmost level");	
+			return false;
+		}
+		else {
+			working_len--;
+			return true;	
+		}
+	}
 	DIR *curdir = opendir(fhm_constructpath());
 	if(curdir == NULL) {
 		perror("opendir(): ");
@@ -92,5 +102,8 @@ void fhm_ls() {
 		return;
 	}
 	char fileName[__MAX_PATH_LEN__], fileContents[__MAX_PATH_LEN__];
-	while(fscanf(fp, " %s %s", fileName, fileContents) != EOF) printf("%s\t", fileName);
+	while(fscanf(fp, " %s %s", fileName, fileContents) != EOF) {
+		printf("%s\t", fileName);
+	}
+	printf("\n");
 }
