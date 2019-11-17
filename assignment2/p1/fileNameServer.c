@@ -23,16 +23,19 @@ int clients_read_buf_sz[FD_SETSIZE];
 int clients_total_to_read[FD_SETSIZE];
 int clients_total_read[FD_SETSIZE];
 char clients_cmd_code[__CMD_CODE_LEN__ + 1][FD_SETSIZE]; // to remember how much has been read 
+fd_set rset, wset, allset, allwset;
 
-void upload_to_ds (int *x) {
+void upload_to_ds (void *x) {
+	int i = *((int *) x);
 	printf("here\n");
-	if (write(2, clients_read_buf[*x], clients_read_buf_sz[*x]) == -1) {
+	if (write(2, clients_read_buf[i], clients_read_buf_sz[i]) == -1) {
 		perror("Err here");
 	}
 	printf("\n");
 
-	clients_read_buf_sz[*x] = 0;
-	memset(clients_read_buf[*x], 0, __ONE_MB__);
+	clients_read_buf_sz[i] = 0;
+	memset(clients_read_buf[i], 0, __ONE_MB__);
+
 	return;
 }
 
@@ -43,8 +46,6 @@ int main () {
 
 	maxj = -1;
 	maxfd = serv_sock;
-
-	fd_set rset, wset, allset, allwset;
 
 	for (int i = 0; i < FD_SETSIZE; i++) {
 		clients[i] = -1;
@@ -128,53 +129,11 @@ int main () {
 
 						clients_status[x] = __CMD_READ__;
 
-/*
- *                                                char *filename = strtok(strdup(clients_read_buf[x]), "#");
- *                                                printf("filename: %s\n", filename);
- *                                                // TODO: store file in hierarchy
- *                                                
- *                                                char *fcontent = strchr(strchr(clients_read_buf[x], '#') + 1, '#');
- *                                                printf("fcontent: %s\n", fcontent + 1);
- *
- *                                                clients_status[x] = __UPLOADING_FILE__;
- *                                                memset(clients_read_buf[x], __ONE_MB__, 0);
- *                                                clients_read_buf_sz[x] = 0;
- *                                                if (fcontent != NULL) {
- *                                                        strcpy(clients_read_buf[x], fcontent + 1);
- *                                                        clients_read_buf_sz[x] = strlen(clients_read_buf[x]) * sizeof(char);
- *                                                }
- *
- *                                                char data_recv[__ONE_MB__ + 1];
- *                                                if (clients_read_buf_sz[x] != 0) {
- *                                                        strcpy(data_recv, clients_read_buf[x]);	
- *
- *                                                        strcpy(clients_read_buf[x], strchr(data_recv, '#') + 1);
- *                                                        char *to_read = strtok(data_recv, "#");
- *                                                        printf("1to_read: %s\n", to_read);
- *                                                        printf("1buf: %s\n", clients_read_buf[x]);
- *                                                        clients_total_to_read[x] = atoi(to_read);
- *                                                        clients_total_read[x] = 0;
- *
- *                                                        clients_read_buf_sz[x] = strlen(clients_read_buf[x]) * sizeof(char); 
- *                                                        clients_total_read[x] += strlen(clients_read_buf[x]) * sizeof(char);
- *                                                        printf("1size: %d\n", clients_read_buf_sz[x]);
- *                                                        pthread_t tid;
- *                                                        pthread_create(&tid, NULL, upload_to_ds, &x);
- *                                                        
- *                                                        if (pthread_detach(tid) != 0) {
- *                                                                perror("Error with pthread_detach()");
- *                                                                exit(0);
- *                                                                
- *                                                        }
- *
- *                                                        if (clients_total_read[x] >= clients_total_to_read[x]) {
- *                                                                clients_status[x] = __UPLOADING_FILE__;
- *                                                                FD_SET(csock, &allwset);
- *                                                        }
- *                                                        else 
- *                                                                clients_status[x] = __UPLOADING_FILE__;	
- *                                                }
- */
+						printf("filename: %s\n", clients_read_buf[x]);
+
+						FD_CLR(csock, &allset);
+						FD_SET(csock, &allwset);
+
 					}
 					nready--;
 				}
@@ -182,6 +141,7 @@ int main () {
 					// cmd already read
 					
 					if (strcmp(clients_cmd_code[x],__UPLOAD_CODE__) == 0) {
+						clients_status[x] = __UPLOADING_FILE__;
 						char data_recv[__ONE_MB__ + 1];
 						int nb = read(csock, data_recv, __ONE_MB__);
 						data_recv[nb] = 0;
@@ -209,9 +169,9 @@ int main () {
 
 						clients_read_buf_sz[x] = strlen(clients_read_buf[x]) * sizeof(char); 
 						clients_total_read[x] += strlen(clients_read_buf[x]) * sizeof(char);
-						printf("size: %d\n", clients_read_buf_sz[x]);
+						printf("%d size: %d\n", x, clients_read_buf_sz[x]);
 						pthread_t tid;
-						pthread_create(&tid, NULL, upload_to_ds, &x);
+						pthread_create(&tid, NULL, upload_to_ds, (void *)&x);
 						
 						if (pthread_detach(tid) != 0) {
 							perror("Error with pthread_detach()");
@@ -219,7 +179,8 @@ int main () {
 						}
 
 						if (clients_total_read[x] >= clients_total_to_read[x]) {
-							clients_status[x] = __UPLOADING_FILE__;
+							clients_status[x] = __FILE_UPLOADED__;
+							FD_CLR(csock, &allset);
 							FD_SET(csock, &allwset);
 						}
 					}	
@@ -263,6 +224,16 @@ int main () {
 						}
 					}
 				}
+				
+			}
+			else if (FD_ISSET(csock, &wset)) {
+				if (clients_status[x] == __CMD_READ__) {
+					// writing random char for ack
+					write(csock, "a", 1);
+
+					FD_CLR(csock, &allwset);
+					FD_SET(csock, &allset);
+				}
 				else if (clients_status[x] == __FILE_UPLOADED__) {
 					char *reply = "File uploaded successfully!";
 					write(csock, reply, strlen(reply) * sizeof(char));
@@ -270,10 +241,7 @@ int main () {
 					FD_CLR(csock, &allwset);
 					FD_SET(csock, &allset);
 					clients_status[x] = __INIT_STATUS__;
-				}
-			}
-			else if (FD_ISSET(csock, &wset)) {
-					
+				}	
 			}
 
 			if (nready <= 0) break;
