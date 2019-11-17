@@ -38,7 +38,17 @@ bool fhm_mkdir(const char *path_name) {
 }
 
 bool fhm_cd(const char *path_name) {
-	//printf("%s\n", fhm_constructpath());
+	if(strcmp(path_name, ".") == 0) return true;
+	else if(strcmp(path_name, "..") == 0) {
+		if(working_len == 0) {
+			printf("At the topmost level");	
+			return false;
+		}
+		else {
+			working_len--;
+			return true;	
+		}
+	}
 	DIR *curdir = opendir(fhm_constructpath());
 	if(curdir == NULL) {
 		perror("opendir(): ");
@@ -82,4 +92,19 @@ bool fhm_rm(const char *name) {
 	//printf("\n\nCMD: %s CMD_END\n\n", sed_command);
 	system(sed_command);	
 	return true;
+}
+
+void fhm_ls() {
+	char *meta_file_name = strcat(fhm_constructpath(), "/");
+	strcat(meta_file_name, __FHM_METAFILE__);
+	FILE *fp = fopen(meta_file_name, "r");
+	if(fp == NULL) {
+		printf("Unexpected error\n");
+		return;
+	}
+	char fileName[__MAX_PATH_LEN__], fileContents[__MAX_PATH_LEN__];
+	while(fscanf(fp, " %s %s", fileName, fileContents) != EOF) {
+		printf("%s\t", fileName);
+	}
+	printf("\n");
 }
