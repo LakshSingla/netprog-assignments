@@ -31,9 +31,15 @@ int main() {
 			tok = strtok(NULL, " ");
 			char *filename = tok;
 			char cmd_send[__MAX_CMD_SIZE__];
+			/*sprintf(cmd_send, "%s#%s#", __UPLOAD_CODE__, filename);*/
 			sprintf(cmd_send, "%s%s", __UPLOAD_CODE__, filename);
 			write(confd, cmd_send, strlen(cmd_send) * sizeof(char));
 			upload_file(filename, confd);
+			char ack[1];
+			read(confd, ack, 1);
+			char resp[__MAX_RESP_SIZE__];
+			read(confd, resp, __MAX_RESP_SIZE__);
+			printf("\n%s\n", resp);
 		}
 		else if (strcmp(cmd_name, __LS_CMD__) == 0) {
 			// ls cmd

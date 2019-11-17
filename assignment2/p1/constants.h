@@ -10,6 +10,7 @@
 #define __MAX_PATH_LEN__	400
 #define __FHM_METAFILE__	"fhm.meta"
 #define __FHM_ROOTDIR__		"fhm.root"
+#define __MAX_RESP_SIZE__	50
 
 // client commands
 #define __UPLOAD_CMD__		"upload"
