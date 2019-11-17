@@ -32,4 +32,6 @@
 #define __INIT_STATUS__		0
 #define __CMD_READ__		1
 #define __UPLOADING_FILE__	2
+#define __FILE_UPLOADED__	3
+
 #endif

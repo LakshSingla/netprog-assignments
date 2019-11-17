@@ -1,4 +1,4 @@
-#include "fileHeirarchyMethods.h"
+#include "fileHierarchyMethods.h"
 
 #include <stdlib.h>
 #include <stdio.h>

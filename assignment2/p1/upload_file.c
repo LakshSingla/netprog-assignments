@@ -4,6 +4,7 @@
 #include<stdbool.h>
 #include<fcntl.h>
 #include<sys/stat.h>
+#include<string.h>
 
 #include "constants.h"
 
@@ -29,8 +30,11 @@ void upload_file (char *filepath, int confd) {
 	}
 	else {
 		buf[nb] = 0;
-		int n = write(confd, buf, nb);
-		if (n != nb) {
+		char msg[nb + 10];
+		sprintf(msg, "%d#%s", nb, buf);
+		int msg_size = strlen(msg) * sizeof(char);
+		int n = write(confd, msg, msg_size);
+		if (n != msg_size) {
 			perror("Error uploading file to server");
 			exit(0);
 		}
