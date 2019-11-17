@@ -11,6 +11,18 @@
 
 #include "constants.h"
 #include "tcp_helpers.h"
+#include "fileHierarchyMethods.h"
+
+struct data_server {
+	char ip[INET_ADDRSTRLEN];
+	int port;
+};
+
+struct data_server DS[3] = {
+	{"127.0.0.1", 5000},
+	{"127.0.0.1", 6000},
+	{"127.0.0.1", 7000}
+};
 
 char *working_dir[__MAX_PATH_COMPONENTS__] = {NULL};
 int working_len = 0;
@@ -23,7 +35,7 @@ int clients_read_buf_sz[FD_SETSIZE];
 int clients_total_to_read[FD_SETSIZE];
 int clients_total_read[FD_SETSIZE];
 char clients_cmd_code[__CMD_CODE_LEN__ + 1][FD_SETSIZE]; // to remember how much has been read 
-fd_set rset, wset, allset, allwset;
+fd_set rset, wset, allrset, allwset;
 
 void upload_to_ds (void *x) {
 	int i = *((int *) x);
@@ -32,6 +44,24 @@ void upload_to_ds (void *x) {
 		perror("Err here");
 	}
 	printf("\n");
+	int clnt_sock = clnt_side_setup(DS[0].ip, DS[0].port);
+
+	// send data size
+	char sz[12];
+	sprintf(sz, "%s%d", __UPLOAD_CODE__, clients_read_buf_sz[i]);
+	write(clnt_sock, sz, strlen(sz) * sizeof(char));
+
+	// wait storage file name
+	char storage_fn[50];
+	int n = read(clnt_sock, storage_fn, 50);
+	storage_fn[n] = 0;
+	printf("st file: %s\n", storage_fn);
+	
+	// write data
+	if (write(clnt_sock, clients_read_buf[i], clients_read_buf_sz[i]) != clients_read_buf_sz[i]) {
+		perror("Error in write() to ds");
+		exit(0);
+	}
 
 	clients_read_buf_sz[i] = 0;
 	memset(clients_read_buf[i], 0, __ONE_MB__);
@@ -51,12 +81,12 @@ int main () {
 		clients[i] = -1;
 		clients_status[i] = -1;
 	}
-	FD_ZERO(&allset);
+	FD_ZERO(&allrset);
 	FD_ZERO(&allwset);
-	FD_SET(serv_sock, &allset);
+	FD_SET(serv_sock, &allrset);
 
 	while (true) {
-		rset = allset;
+		rset = allrset;
 		wset = allwset;
 
 		int nready = select(maxfd + 1, &rset, &wset, NULL, NULL);
@@ -79,7 +109,7 @@ int main () {
 			}
 			clients_status[j] = __INIT_STATUS__;
 
-			FD_SET(clnt_sock, &allset);
+			FD_SET(clnt_sock, &allrset);
 
 			if (j > maxj) maxj = j;
 			if (clnt_sock > maxfd) maxfd = clnt_sock;
@@ -111,8 +141,8 @@ int main () {
 					}
 					else if (nb == 0) {
 						close(csock);
-						FD_CLR(csock, &allset);
-						clients[x] = 0;
+						FD_CLR(csock, &allrset);
+						clients[x] = -1;
 						clients_status[x] = -1;
 						break;
 					}
@@ -129,9 +159,9 @@ int main () {
 
 						clients_status[x] = __CMD_READ__;
 
-						printf("filename: %s\n", clients_read_buf[x]);
+						printf("init buf: %s\n", clients_read_buf[x]);
 
-						FD_CLR(csock, &allset);
+						FD_CLR(csock, &allrset);
 						FD_SET(csock, &allwset);
 
 					}
@@ -154,8 +184,8 @@ int main () {
 						}
 						else if (nb == 0) {
 							close(csock);
-							FD_CLR(csock, &allset);
-							clients[x] = 0;
+							FD_CLR(csock, &allrset);
+							clients[x] = -1;
 							clients_status[x] = -1;
 							break;
 						}
@@ -180,7 +210,7 @@ int main () {
 
 						if (clients_total_read[x] >= clients_total_to_read[x]) {
 							clients_status[x] = __FILE_UPLOADED__;
-							FD_CLR(csock, &allset);
+							FD_CLR(csock, &allrset);
 							FD_SET(csock, &allwset);
 						}
 					}	
@@ -200,8 +230,8 @@ int main () {
 							}
 							else if (nb == 0) {
 								close(csock);
-								FD_CLR(csock, &allset);
-								clients[x] = 0;
+								FD_CLR(csock, &allrset);
+								clients[x] = -1;
 								clients_status[x] = -1;
 								break;
 							}
@@ -219,7 +249,7 @@ int main () {
 						}
 						else {
 							clients_status[x] = __FILE_UPLOADED__;
-							FD_CLR(csock, &allset);
+							FD_CLR(csock, &allrset);
 							FD_SET(csock, &allwset);
 						}
 					}
@@ -228,18 +258,53 @@ int main () {
 			}
 			else if (FD_ISSET(csock, &wset)) {
 				if (clients_status[x] == __CMD_READ__) {
-					// writing random char for ack
-					write(csock, "a", 1);
+					if (strcmp(clients_cmd_code[x],__UPLOAD_CODE__) == 0) {
+						// writing random char for ack
+						write(csock, "a", 1);
 
-					FD_CLR(csock, &allwset);
-					FD_SET(csock, &allset);
+						FD_CLR(csock, &allwset);
+						FD_SET(csock, &allrset);
+					}
+					else if (strcmp(clients_cmd_code[x], __CD_CODE__) == 0) {
+						if (fhm_cd(clients_read_buf[x]) == true) {
+							char reply[__MAX_PATH_LEN__];
+							strcpy(reply, fhm_constructpath());
+							write(csock, reply, strlen(reply) * sizeof(char));
+						}
+						else {
+							char *reply = "Error in changing directory!";
+							write(csock, reply, strlen(reply) * sizeof(char));
+						}
+						clients_status[x] = __INIT_STATUS__;
+						FD_CLR(csock, &allwset);
+						FD_SET(csock, &allrset);
+					} 
+					else if (strcmp(clients_cmd_code[x], __MKDIR_CODE__) == 0) { 
+						if (fhm_mkdir(clients_read_buf[x]) == true) {
+							char reply[__MAX_PATH_LEN__ + 25];
+							memset(reply, 0, __MAX_PATH_LEN__ + 25);
+							strcpy(reply, "Directory created at: ");
+							strcat(reply, fhm_constructpath());
+							strcat(reply, "/");
+							strcat(reply, clients_read_buf[x]);
+							write(csock, reply, strlen(reply) * sizeof(char));
+						}
+						else {
+							char *reply = "Error in making directory!";
+							write(csock, reply, strlen(reply) * sizeof(char));
+						}
+						clients_status[x] = __INIT_STATUS__;
+						FD_CLR(csock, &allwset);
+						FD_SET(csock, &allrset);
+
+					} 
 				}
 				else if (clients_status[x] == __FILE_UPLOADED__) {
 					char *reply = "File uploaded successfully!";
 					write(csock, reply, strlen(reply) * sizeof(char));
 
 					FD_CLR(csock, &allwset);
-					FD_SET(csock, &allset);
+					FD_SET(csock, &allrset);
 					clients_status[x] = __INIT_STATUS__;
 				}	
 			}

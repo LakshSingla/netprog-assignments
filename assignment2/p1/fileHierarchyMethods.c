@@ -24,6 +24,7 @@ char *fhm_constructpath() {
 bool fhm_mkdir(const char *path_name) {
 	char *full_path = strcat(fhm_constructpath(), "/");
 	strcat(full_path, path_name);
+	printf("here: %s\n", full_path);
 	if(mkdir(full_path, 0777) != -1) {
 		strcat(full_path, "/");
 		strcat(full_path, __FHM_METAFILE__);

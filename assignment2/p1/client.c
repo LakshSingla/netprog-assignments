@@ -9,7 +9,7 @@
 #include "upload_file.h"
 
 int main() {
-	int confd = clnt_side_setup(NULL, __NAME_SERVER_PORT__);
+	int confd = clnt_side_setup(__NAME_SERVER_IP__, __NAME_SERVER_PORT__);
 	while(true) {
 		printf(__PROMPT__);	
 		size_t cmd_size = __MAX_CMD_SIZE__+1;
@@ -50,13 +50,35 @@ int main() {
 			// cp cmd
 			
 		}
+		else if (strcmp(cmd_name, __CD_CMD__) == 0) {
+			// cd cmd
+			tok = strtok(NULL, " ");
+			char *path = tok;
+			char cmd_send[__MAX_CMD_SIZE__];
+			sprintf(cmd_send, "%s%s", __CD_CODE__, path);
+			write(confd, cmd_send, strlen(cmd_send) * sizeof(char));
+			char resp[__MAX_PATH_LEN__];
+			int nb = read(confd, resp, __MAX_RESP_SIZE__);
+			resp[nb] = 0;
+			printf("\n%s\n", resp);
+
+		}
 		else if (strcmp(cmd_name, __MV_CMD__) == 0) {
 			// mv cmd
 			
 		}
 		else if (strcmp(cmd_name, __MKDIR_CMD__) == 0) {
 			// mkdir cmd
-			
+			tok = strtok(NULL, " ");
+			char *path = tok;
+			char cmd_send[__MAX_CMD_SIZE__];
+			sprintf(cmd_send, "%s%s", __MKDIR_CODE__, path);
+			write(confd, cmd_send, strlen(cmd_send) * sizeof(char));
+			char resp[__MAX_PATH_LEN__];
+			int nb = read(confd, resp, __MAX_RESP_SIZE__);
+			resp[nb] = 0;
+			printf("\n%s\n", resp);
+		
 		}
 		else if (strcmp(cmd_name, __RM_CMD__) == 0) {
 			// rm cmd

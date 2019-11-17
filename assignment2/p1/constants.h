@@ -5,6 +5,7 @@
 #define __MAX_PENDING__		1024
 #define __ONE_MB__		1024
 #define __PROMPT__		"bigfs> "
+#define __NAME_SERVER_IP__	"127.0.0.1"
 #define __NAME_SERVER_PORT__	4000	
 #define __MAX_PATH_COMPONENTS__	100
 #define __MAX_PATH_LEN__	400
@@ -19,6 +20,8 @@
 #define __LS_CODE__		"LS"
 #define __CP_CMD__		"cp"
 #define __CP_CODE__		"CP"
+#define __CD_CMD__		"cd"
+#define __CD_CODE__		"CD"
 #define __MV_CMD__		"mv"
 #define __MV_CODE__		"MV"
 #define __MKDIR_CMD__		"mkdir"
