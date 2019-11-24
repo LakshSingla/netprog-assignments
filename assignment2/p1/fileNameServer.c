@@ -39,7 +39,6 @@ fd_set rset, wset, allrset, allwset;
 
 void upload_to_ds (void *x) {
 	int i = *((int *) x);
-	printf("here\n");
 	if (write(2, clients_read_buf[i], clients_read_buf_sz[i]) == -1) {
 		perror("Err here");
 	}
@@ -293,6 +292,28 @@ int main () {
 							char *reply = "Error in making directory!";
 							write(csock, reply, strlen(reply) * sizeof(char));
 						}
+						clients_status[x] = __INIT_STATUS__;
+						FD_CLR(csock, &allwset);
+						FD_SET(csock, &allrset);
+
+					}
+					else if (strcmp(clients_cmd_code[x], __RM_CODE__) == 0) { 
+						if (fhm_rm(clients_read_buf[x]) == true) {
+							char *reply = "Removed";
+							write(csock, reply, strlen(reply) * sizeof(char));
+						}
+						else {
+							char *reply = "Error in removing!";
+							write(csock, reply, strlen(reply) * sizeof(char));
+						}
+						clients_status[x] = __INIT_STATUS__;
+						FD_CLR(csock, &allwset);
+						FD_SET(csock, &allrset);
+
+					}
+					else if (strcmp(clients_cmd_code[x], __LS_CODE__) == 0) { 
+						char *out = fhm_ls();
+						write(csock, out, strlen(out) * sizeof(char));
 						clients_status[x] = __INIT_STATUS__;
 						FD_CLR(csock, &allwset);
 						FD_SET(csock, &allrset);

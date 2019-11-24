@@ -16,19 +16,20 @@ void handle_topic_read (int fd, char *topic, int last_msg_id, struct shared_mem_
 		if(strcmp((addr->lt[i]).topic_name, topic) == 0) {
 			// topic present
 			int msg_count = addr->lt[i].no_messages;
+			int j;
 			if (msg_count > 0) {
 				int msg_index = (addr->lt[i]).get_index;
 				struct msg_struct ret_msg = (addr->lt[i]).msg_arr[msg_index];
 				
-				int j = 0;
+				j = 0;
 				while (ret_msg.id <= last_msg_id && j < msg_count) {
 					msg_index++;
 					j++;
 					ret_msg = (addr->lt[i]).msg_arr[msg_index];
 				}
 				
-				if (j == msg_count) reply = "No messages remaining to read!";
-				else {
+				/*if (j == msg_count) reply = "No messages remaining to read!";*/
+				if (j != msg_count) {
 					// need to send msg with id
 					char msg_with_id[__MAX_RESPONSE_SIZE__];
 					sprintf(msg_with_id, "%d#%s", ret_msg.id, ret_msg.msg);
@@ -36,7 +37,7 @@ void handle_topic_read (int fd, char *topic, int last_msg_id, struct shared_mem_
 					return;
 				}
 			}
-			else {
+			else if (j == msg_count || msg_count == 0) {
 				// communicate to other brokers to get messages	
 				if (query_neighbour(topic, self_ip, self_port, addr) != 0) {
 					reply = "No messages found for the topic!";	
@@ -61,3 +62,5 @@ void handle_topic_read (int fd, char *topic, int last_msg_id, struct shared_mem_
 
 	write(fd, reply, (strlen(reply) + 1) * sizeof(char));
 }
+
+

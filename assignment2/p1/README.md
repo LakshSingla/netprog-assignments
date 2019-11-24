@@ -1,5 +1,0 @@
-- cd
-	- No absolute paths
-	- No ../asdf/asdf
-	- `cd asdf` means cd into folder `asdf` in cwd
-	- `cd ..` allowed

@@ -24,6 +24,7 @@ void msg_prefix (char *msg, char *class, char *code, char *content) {
 }
 
 char *send_and_wait (int con_fd, char *msg, int msg_size) {
+	write(1, msg, msg_size);
 	// write cmd
 	int n = write(con_fd, msg, msg_size);
 	if (n != msg_size) {
@@ -34,6 +35,7 @@ char *send_and_wait (int con_fd, char *msg, int msg_size) {
 	char *resp = (char *) malloc(sizeof(char) * __MAX_RESPONSE_SIZE__);
 	int nr = read(con_fd, resp, __MAX_RESPONSE_SIZE__);
 	if (nr <= 0) {
+		perror("Error with read()");
 		printf("Error reading response\n");
 	}
 	else {

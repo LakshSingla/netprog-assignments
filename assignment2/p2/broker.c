@@ -18,34 +18,7 @@
 #include "broker_methods.h"
 #include "common_utils.h"
 
-// Lock sem before it
-/*
- *void update_shared_memory(struct shared_mem_structure *addr, const char *name) {
- *        int count = addr->n;
- *        for(int i = 0; i < count; ++i) {
- *                if(strcmp((addr->lt[i]).topic_name, name) == 0) return;
- *        }
- *        strcpy((addr->lt[count]).topic_name, name);
- *        (addr->lt[count]).no_messages = 0;
- *        addr->n = count+1;
- *        return;
- *}
- *
- *void add_message(struct shared_mem_structure *addr, const char *name, const char *msg) {
- *        
- *        int count = addr->n;
- *        for(int i = 0; i < count; ++i) {
- *                if(strcmp((addr->lt[i]).topic_name, name) == 0) {
- *                        strcpy((addr->lt[i]).msg_arr[(addr->lt[i]).no_messages], msg);
- *                        (addr->lt[i]).no_messages += 1;
- *                        return;
- *                }
- *        }
- *}
- *
- */
 // Unlock sem before it
-
 struct broker BROKERS[3] = {
 	{"127.0.0.1", 4000, "127.0.0.1", 5000, "127.0.0.1", 6000},
 	{"127.0.0.1", 5000, "127.0.0.1", 6000, "127.0.0.1", 5000},
@@ -62,15 +35,9 @@ char *right_ip;
 int right_port;
 	
 
-/*
- *void del_msg () {
- *        printf("here: %s\n", sh_mem->lt[count].msg_array)
- *}
- */
-
 int main (int argc, char *argv[]) {
 	if (argc != 2){
-		printf("Incorrect number of arguments.\n");
+		printf("Usage: ./b.out <broker-index>.\n");
 		exit(0);
 	}
 
@@ -88,7 +55,7 @@ int main (int argc, char *argv[]) {
 	
 	srand(time(NULL));
 	int shmkey3 = ftok("./broker.c", rand() * getpid());
-	printf("%d %ld\n", shmkey3, sizeof(struct shared_mem_structure));
+	/*printf("%d %ld\n", shmkey3, sizeof(struct shared_mem_structure));*/
 	int shm3 = shmget (shmkey3, sizeof(struct shared_mem_structure), IPC_CREAT | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if(shm3 == -1) {
 		perror("Error with shmget()");
@@ -98,50 +65,11 @@ int main (int argc, char *argv[]) {
 	struct shared_mem_structure *sh_mem = shmat(shm3, NULL, 0);
 	sh_mem->n = 0;
 
-	printf("%d\n", sh_mem->n);
 	if (sh_mem == (void *) -1) {
 		perror("Error with shmat()");
 		exit(0);
 	}
 
-	/*if(fork() == 0) {
-		update_shared_memory(sh_mem, "robin");
-		exit(0);
-	}
-	wait(NULL);
-	if(fork() == 0) {
-		update_shared_memory(sh_mem, "robin2");
-		exit(0);
-	}
-	wait(NULL);
-	if(fork() == 0) {
-		update_shared_memory(sh_mem, "robin");
-		exit(0);
-	}
-	wait(NULL);	
-
-	add_message(sh_mem, "robin", "msg1");
-	add_message(sh_mem, "robin2", "msg1");
-	add_message(sh_mem, "robin", "msg1");
-	add_message(sh_mem, "robin", "msg2");
-	if(fork() == 0) {
-		add_message(sh_mem, "robin2", "x");
-		exit(0);
-	}
-
-	wait(NULL);
-
-	printf("%d\n", sh_mem->n);
-	for(int i = 0; i < sh_mem->n; ++i) {
-		printf("%s\n", (sh_mem->lt[i]).topic_name);	
-		for(int j = 0; j < (sh_mem->lt[i]).no_messages; ++j) {
-			printf("%s\n", (sh_mem->lt[i]).msg_arr[j]);	
-		}
-	}
-
-	*curr_topic_count = 0;
-*/
-	/*signal(SIGALRM, del_msg);*/
 	int serv_sock = serv_side_setup (self_port); 
 
 	while (true) {
@@ -194,7 +122,6 @@ int main (int argc, char *argv[]) {
 					handle_topic_create(clnt_sock, topic, sh_mem);
 					close(clnt_sock);
 				}
-				printf("broker end\n");
 			}
 			else if (strcmp(conn_class, __SUB_CLASS__) == 0) {
 				printf("subscriber connection\n");
@@ -218,7 +145,6 @@ int main (int argc, char *argv[]) {
 					int id = atoi(tok);
 					char *topic = strchr(id_n_topic_copy, '#') + 1;
 
-					printf("retrieve: %s\n", topic);
 					handle_topic_read(clnt_sock, topic, id, sh_mem);
 				}
 				else if (cmd_code[0] == '2') {

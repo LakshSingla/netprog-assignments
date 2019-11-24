@@ -4,6 +4,6 @@
 #include "subscriber.h"
 
 void subscribe_topic (char *topic);
-void ret_topic (char *topic, int con_fd);
-void retall_topic (char *topic, int con_fd);
+int ret_topic (char *topic, int con_fd);
+void retall_topic (char *topic, char *broker_ip, int broker_port);
 #endif

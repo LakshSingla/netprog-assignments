@@ -39,11 +39,12 @@ int query_neighbour (char *topic, char *ip, int port, struct shared_mem_structur
 	int msg_count = 0;
 	while (true) {
 		if (msg_count == 10) break;
-		char msg_size_str[3];
+		char msg_size_str[4];
 		int n = read(clnt_sock, msg_size_str, 3);
 		if (n <= 0) {
 			break;
 		}
+		msg_size_str[n] = 0;
 		int msg_size = atoi(msg_size_str);
 
 		char msg[msg_size + 1];
@@ -104,7 +105,7 @@ void handle_brok (int fd, char *msg, struct shared_mem_structure *addr) {
 
 				char resp[__MAX_BROK_RESP_SIZE__];
 				memset(resp, 0, __MAX_BROK_RESP_SIZE__);
-				for (int j = 0; j < __BULK_LIMIT__; j++) {
+				for (int j = 0; j < __BULK_LIMIT__; j = (j + 1) % __MAX_MSG_COUNT__) {
 					if (j == msg_count) break;
 
 					struct msg_struct curr_msg = msg_arr[j];
@@ -140,6 +141,7 @@ void handle_brok (int fd, char *msg, struct shared_mem_structure *addr) {
 					sprintf(append_resp, "%3ld%s", strlen(curr_msg.msg) * sizeof(char), curr_msg.msg);
 					strcat(resp, append_resp);	
 				}
+				printf("sending to broker: %s\n", resp);
 				write(fd, resp, strlen(resp) * sizeof(char));
 			}
 		}

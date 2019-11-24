@@ -94,7 +94,7 @@ bool fhm_rm(const char *name) {
 	return true;
 }
 
-void fhm_ls() {
+char *fhm_ls() {
 	char *meta_file_name = strcat(fhm_constructpath(), "/");
 	strcat(meta_file_name, __FHM_METAFILE__);
 	FILE *fp = fopen(meta_file_name, "r");
@@ -102,9 +102,15 @@ void fhm_ls() {
 		printf("Unexpected error\n");
 		return;
 	}
+	char *out = malloc((20 * __MAX_PATH_LEN__) * sizeof(char));
+	memset(out, 0, 20 * __MAX_PATH_LEN__);
 	char fileName[__MAX_PATH_LEN__], fileContents[__MAX_PATH_LEN__];
 	while(fscanf(fp, " %s %s", fileName, fileContents) != EOF) {
-		printf("%s\t", fileName);
+		char tmp[__MAX_PATH_LEN__];
+		sprintf(tmp, "%s\t", fileName);
+		strcat(out, tmp);
+		/*printf("%s\t", fileName);*/
 	}
-	printf("\n");
+	/*printf("\n");*/
+	return out;
 }
