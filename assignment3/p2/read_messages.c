@@ -58,13 +58,13 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 
-		printf(LOG_PACKET_SEP);
+		fprintf(fp, LOG_PACKET_SEP);
 
 		int excl_len = 0;
 		struct ethhdr *eth = (struct ethhdr*)(buf + excl_len);
 		excl_len += sizeof(struct ethhdr);		
-		printf("Source Mac Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ", eth->h_source[0], eth->h_source[1], eth->h_source[2], eth->h_source[3], eth->h_source[4], eth->h_source[5]);
-		printf("Destination Mac Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", eth->h_dest[0], eth->h_dest[1], eth->h_dest[2], eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
+		fprintf(fp, "Source Mac Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x, ", eth->h_source[0], eth->h_source[1], eth->h_source[2], eth->h_source[3], eth->h_source[4], eth->h_source[5]);
+		fprintf(fp, "Destination Mac Address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", eth->h_dest[0], eth->h_dest[1], eth->h_dest[2], eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
 
 		struct ip *iph = (struct ip*)(buf + excl_len);
 		int ip_hdr_len = iph->ip_hl << 2;
@@ -75,16 +75,16 @@ int main(int argc, char **argv) {
 		inet_ntop(AF_INET, &(iph->ip_src), src_ip_buf, 100);
 		inet_ntop(AF_INET, &(iph->ip_dst), dst_ip_buf, 100);
 
-		printf("Source IP address: %s, Destination IP address: %s\nIP TTL: %d, IP Protocol no.: %d, ", src_ip_buf, dst_ip_buf, iph->ip_ttl, iph->ip_p);
+		fprintf(fp, "Source IP address: %s, Destination IP address: %s\nIP TTL: %d, IP Protocol no.: %d, ", src_ip_buf, dst_ip_buf, iph->ip_ttl, iph->ip_p);
 		
 		struct protoent *proto = getprotobynumber(iph->ip_p);
 		if (proto == NULL) {
-			printf("IP Protocol name: (Not found)\n");
+			fprintf(fp, "IP Protocol name: (Not found)\n");
 		}
 		else {
-			printf("IP Protocol name: %s\n", proto->p_name);
+			fprintf(fp, "IP Protocol name: %s\n", proto->p_name);
 		}
-		printf("\n");
+		fprintf(fp, "\n");
 
 		void *transport_layer_ds = buf + excl_len;
 
@@ -93,16 +93,16 @@ int main(int argc, char **argv) {
 		}*/
 		if(iph->ip_p == IPPROTO_TCP) {
 			struct tcphdr *tcph = (struct tcphdr*) transport_layer_ds;
-			printf("TCP Port Info | Source port: %d, Destination port: %d\n", ntohs(tcph->source), ntohs(tcph->dest));
-			printf("TCP Packet Info | Window: %d, SYN: %d, FIN: %d, RST: %d, ACK: %d\n", ntohs(tcph->window), ntohs(tcph->syn), ntohs(tcph->fin),ntohs(tcph->rst),ntohs(tcph->ack));
+			fprintf(fp, "TCP Port Info | Source port: %d, Destination port: %d\n", ntohs(tcph->source), ntohs(tcph->dest));
+			fprintf(fp, "TCP Packet Info | Window: %d, SYN: %d, FIN: %d, RST: %d, ACK: %d\n", ntohs(tcph->window), ntohs(tcph->syn), ntohs(tcph->fin),ntohs(tcph->rst),ntohs(tcph->ack));
 		}
 		else if(iph->ip_p == IPPROTO_UDP) {
 			struct udphdr *udph = (struct udphdr*)transport_layer_ds;	
-			printf("UDP Port Info | Source port: %d, Destination port: %d\n", ntohs(udph->source), ntohs(udph->dest));
+			fprintf(fp, "UDP Port Info | Source port: %d, Destination port: %d\n", ntohs(udph->source), ntohs(udph->dest));
 		}
 
-		printf(LOG_PACKET_SEP);
-		printf("\n");
+		fprintf(fp, LOG_PACKET_SEP);
+		fprintf(fp, "\n");
 		
 
 	}
