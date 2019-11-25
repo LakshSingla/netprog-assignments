@@ -7,7 +7,6 @@
 
 #include "constants.h"
 
-#define COURSE_COUNT 5
 #define GROUP_PORT 7000
 
 struct course {
@@ -20,7 +19,10 @@ struct course {
 	bool is_joined;
 };
 
+#define COURSE_COUNT 5 // change this when courses are added/deleted
+
 // predefined course list
+// can be changed as per requirement
 struct course course_list[COURSE_COUNT] = {
 	{"course1", "239.0.0.5", -1, -1, false},
 	{"course2", "239.0.0.6", -1, -1, false},
@@ -47,6 +49,14 @@ int create_sock_fds () {
 	}
 	FD_SET(sock2, &allrset);
 
+	// START: required when need to run on the same machine
+	int yes = 1;
+	if (setsockopt(sock2, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
+		perror("Error creating sock fds due to setsockopt()");
+		exit(0);
+	}
+	// END
+
 	if (bind(sock2, (struct sockaddr *) &addr2, sizeof(addr2)) < 0) {
 		perror("Error with bind() in sock2");
 		exit(0);
@@ -60,6 +70,11 @@ int create_sock_fds () {
 		int sock1 = socket(AF_INET, SOCK_DGRAM, 0);
 		if (sock1 < 0) {
 			perror("Error with socket() in sock1");
+			exit(0);
+		}
+
+		if (setsockopt(sock1, IPPROTO_IP, IP_MULTICAST_LOOP, &yes, sizeof(yes)) < 0) {
+			perror("Error creating sock fds due to setsockopt()");
 			exit(0);
 		}
 
@@ -172,7 +187,6 @@ void notify_group (char *group_name) {
 		else {
 			char notified[__MAX_MSG_SIZE__];
 			sprintf(notified, "\nGroup : %s has been notified\n%s", group_name, __PROMPT__);
-			/*write(0, __PROMPT__, strlen(__PROMPT__) * sizeof(char));	*/
 			write(0, notified, strlen(notified) * sizeof(char));	
 		}
 
@@ -185,6 +199,17 @@ int main (int argc, char *argv[]) {
 	FD_SET(0, &allrset);
 
 	create_sock_fds();
+
+	printf("\nCourse groups:-\n");
+	for (int i = 0; i < COURSE_COUNT; i++) {
+		printf("- Name: %s | Mulicast Group IP: %s\n", course_list[i].name, course_list[i].group_ip);		
+	}
+
+	printf("\nAvailable commands:-\n");
+	printf("- join <group-name>\n");
+	printf("- notify <group-name>\n");
+	printf("- leave <group-name>\n");
+	printf("- joined-groups\n");
 	
 	while (true) {
 		write(0, __PROMPT__, strlen(__PROMPT__) * sizeof(char));	
@@ -214,14 +239,14 @@ int main (int argc, char *argv[]) {
 			else {
 				char *tmp_ptr = strchr(cmd_copy, ' ');
 				if (tmp_ptr == NULL) {
-					printf("Incorrect format for cmd\n");
+					printf("Unknown command\n");
 					continue;
 				}
 
 				char *group_name = tmp_ptr + 1;
 
 				if (group_name == NULL) {
-					printf("Group name required for the command\n");
+					printf("Unknown command\n");
 					continue;
 				}
 
@@ -233,10 +258,6 @@ int main (int argc, char *argv[]) {
 				}
 				else if (strcmp(cmd_name, __LEAVE_CMD__) == 0) {
 					leave_group(group_name);
-				}
-				else {
-					printf("Unknown command\n");
-					continue;
 				}
 			}
 			
