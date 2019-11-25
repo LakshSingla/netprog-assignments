@@ -45,6 +45,7 @@ int create_sock_fds () {
 		perror("Error with socket() in sock2");
 		exit(0);
 	}
+	FD_SET(sock2, &allrset);
 
 	if (bind(sock2, (struct sockaddr *) &addr2, sizeof(addr2)) < 0) {
 		perror("Error with bind() in sock2");
@@ -96,23 +97,9 @@ void join_group (char *group_name) {
 					exit(0);
 				}
 				course_list[i].is_joined = true;
-				FD_SET(course_list[i].recv_fd, &allrset);
 				if (course_list[i].recv_fd > maxfd) maxfd = course_list[i].recv_fd;
 
 				printf("Group : %s joined successfully\n", group_name);
-
-				/*
-				 *int sock = course_list[i].recv_fd;
-				 *struct sockaddr_in addr = course_list[i].recv_addr;
-				 *int addr_len = sizeof(addr);
-				 *char msg[__MAX_MSG_SIZE__];
-				 *if (recvfrom(sock, msg, sizeof(msg), 0, (struct sockaddr *) &addr, &addr_len) < 0) {
-				 *        perror("Error with receiving notification due to recvfrom()");
-				 *}
-				 *else {
-				 *        printf("\n%s\n", msg);
-				 *}
-				 */
 			}
 			break;
 		}
@@ -139,7 +126,7 @@ void leave_group (char *group_name) {
 					exit(0);
 				}
 				course_list[i].is_joined = false;
-				FD_CLR(course_list[i].recv_fd, &allrset);
+				/*FD_CLR(course_list[i].recv_fd, &allrset);*/
 
 				printf("Group : %s left successfully\n", group_name);
 			}
@@ -183,8 +170,10 @@ void notify_group (char *group_name) {
 			perror("Error notifying group due to sendto()");
 		}
 		else {
-			printf("\nGroup : %s has been notified\n", group_name);
-			write(0, __PROMPT__, strlen(__PROMPT__) * sizeof(char));	
+			char notified[__MAX_MSG_SIZE__];
+			sprintf(notified, "\nGroup : %s has been notified\n%s", group_name, __PROMPT__);
+			/*write(0, __PROMPT__, strlen(__PROMPT__) * sizeof(char));	*/
+			write(0, notified, strlen(notified) * sizeof(char));	
 		}
 
 		exit(0);
@@ -192,34 +181,10 @@ void notify_group (char *group_name) {
 }
 
 int main (int argc, char *argv[]) {
-	create_sock_fds();
-
-	if (argc > 1) {
-		int sock = course_list[0].recv_fd;
-		struct sockaddr_in addr = course_list[0].recv_addr;
-		int addr_len = sizeof(addr);
-		struct ip_mreq mreq;
-		mreq.imr_multiaddr.s_addr = inet_addr(course_list[0].group_ip);
-		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-
-		if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
-			perror("error with setsockopt()");
-			exit(0);
-		}
-
-		while (1) {
-			char msg[1024];
-			int c = recvfrom(sock, msg, sizeof(msg), 0, (struct sockaddr *) &addr, &addr_len);
-			if (c < 0) {
-				perror("error with recvfrom()");
-				exit(0);
-			}
-			printf("%s: msg = %s\n\n", inet_ntoa(addr.sin_addr), msg);
-		}	
-	}
-
 	FD_ZERO(&allrset);
 	FD_SET(0, &allrset);
+
+	create_sock_fds();
 	
 	while (true) {
 		write(0, __PROMPT__, strlen(__PROMPT__) * sizeof(char));	
@@ -291,7 +256,7 @@ int main (int argc, char *argv[]) {
 						perror("Error with receiving notification due to recvfrom()");
 					}
 					else {
-						printf("\n%s\n", msg);
+						printf("\nNotification:\n%s\n", msg);
 					}
 					nready--;
 					if (nready == 0) break;

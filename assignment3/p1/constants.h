@@ -1,4 +1,4 @@
-#define __PROMPT__ 		"> "
+#define __PROMPT__ 		"\n> "
 #define __JOIN_CMD__		"join"
 #define __NOTIFY_CMD__		"notify"
 #define __LEAVE_CMD__		"leave"
