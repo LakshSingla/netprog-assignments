@@ -8,6 +8,7 @@
 #include <linux/udp.h>
 #include <net/ethernet.h>
 #include <netinet/ip.h>
+#include <netdb.h>
 
 
 #define LOG_PACKET_SEP "======================================================================================================\n"
@@ -74,7 +75,16 @@ int main(int argc, char **argv) {
 		inet_ntop(AF_INET, &(iph->ip_src), src_ip_buf, 100);
 		inet_ntop(AF_INET, &(iph->ip_dst), dst_ip_buf, 100);
 
-		printf("Source IP address: %s, Destination IP address: %s\nIP TTL: %d, IP Protocol no.: %d\n", src_ip_buf, dst_ip_buf, iph->ip_ttl, iph->ip_p);
+		printf("Source IP address: %s, Destination IP address: %s\nIP TTL: %d, IP Protocol no.: %d, ", src_ip_buf, dst_ip_buf, iph->ip_ttl, iph->ip_p);
+		
+		struct protoent *proto = getprotobynumber(iph->ip_p);
+		if (proto == NULL) {
+			printf("IP Protocol name: (Not found)\n");
+		}
+		else {
+			printf("IP Protocol name: %s\n", proto->p_name);
+		}
+		printf("\n");
 
 		void *transport_layer_ds = buf + excl_len;
 
